@@ -28,8 +28,6 @@ use Modules\TitanCore\Services\Providers\TitanAiProvider;
 use Modules\TitanCore\Services\TitanAiClient;
 use Modules\TitanCore\Services\TitanCoreModelGateway;
 use Modules\TitanCore\Services\TitanCoreRouter;
-use Modules\TitanCore\Services\UsageCostLogger;
-use Modules\TitanCore\Services\UsageCostService;
 use Modules\TitanCore\Support\ModuleDependencyGraph;
 
 class TitanCoreServiceProvider extends ServiceProvider
@@ -113,38 +111,12 @@ class TitanCoreServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../Config/titan-model-runtime.php', 'titan_model_runtime');
 
         // Bind Titan AI client/provider/router (lazy + safe)
-        $this->app->singleton(TitanAiClient::class, function () {
-            $cfg = config('titancore.providers.titanai', []);
-
-            return new TitanAiClient(
-                (string) ($cfg['base_url'] ?? ''),
-                (string) ($cfg['api_key'] ?? ''),
-                (int) ($cfg['timeout_seconds'] ?? 60),
-            );
-        });
-
-        $this->app->singleton(TitanAiProvider::class, function ($app) {
-            return new TitanAiProvider(
-                $app->make(TitanAiClient::class)
-            );
-        });
-
-        $this->app->singleton(TitanCoreRouter::class, function ($app) {
-            return new TitanCoreRouter(
-                $app->make(TitanAiProvider::class)
-            );
-        });
+        $this->app->singleton(TitanAiClient::class);
+        $this->app->singleton(TitanAiProvider::class);
+        $this->app->singleton(TitanCoreRouter::class);
 
         // Model runtime gateway + failover chain
-        $this->app->singleton(TitanCoreModelGateway::class, function ($app) {
-            $costLogger = null;
-            try {
-                $costLogger = $app->make(UsageCostLogger::class);
-            } catch (\Throwable $e) {
-                // not available; gateway still works without it
-            }
-            return new TitanCoreModelGateway($costLogger);
-        });
+        $this->app->singleton(TitanCoreModelGateway::class);
 
         // no bindings; keep lightweight
         $this->app->singleton(

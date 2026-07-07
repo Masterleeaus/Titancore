@@ -4,11 +4,11 @@ namespace Modules\TitanCore\Services\Providers;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Modules\TitanCore\Services\titanaiClient;
+use Modules\TitanCore\Services\TitanAiClient;
 
 class TitanAiProvider
 {
-    public function __construct(private readonly titanaiClient $client) {}
+    public function __construct(private readonly TitanAiClient $client) {}
 
     public function isAllowedPath(string $path, array $allowedPrefixes): bool
     {

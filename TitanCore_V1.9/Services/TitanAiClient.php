@@ -8,11 +8,19 @@ use Illuminate\Support\Str;
 
 class TitanAiClient
 {
+    protected string $baseUrl;
+    protected string $apiKey;
+    protected int $timeoutSeconds;
+
     public function __construct(
-        private readonly string $baseUrl,
-        private readonly string $apiKey,
-        private readonly int $timeoutSeconds = 60,
-    ) {}
+        ?string $baseUrl = null,
+        ?string $apiKey = null,
+        ?int $timeoutSeconds = null,
+    ) {
+        $this->baseUrl = $baseUrl ?? (string) (config('titancore.providers.titanai.base_url') ?? '');
+        $this->apiKey = $apiKey ?? (string) (config('titancore.providers.titanai.api_key') ?? '');
+        $this->timeoutSeconds = $timeoutSeconds ?? (int) (config('titancore.providers.titanai.timeout_seconds') ?? 60);
+    }
 
     private function client(): PendingRequest
     {

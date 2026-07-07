@@ -20,10 +20,7 @@ use Modules\TitanCore\Services\Providers\TitanAiProvider;
  */
 class TitanCoreRouter
 {
-    public function __construct()
-    {
-        // no eager DI; keep router safe to resolve anywhere
-    }
+    public function __construct(protected TitanAiProvider $provider) {}
 
     public function invokeTool(array $request): array
     {
@@ -35,21 +32,15 @@ class TitanCoreRouter
         }
 
         $baseUrl = (string) Arr::get($magic, 'base_url', '');
-        $timeout = (int) Arr::get($magic, 'timeout_seconds', 60);
+        $apiKey = $this->resolvetitanaiKey((string) Arr::get($magic, 'api_key', ''));
 
         if (!$baseUrl) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (base_url)']];
         }
 
-        $apiKey = $this->resolvetitanaiKey((string) Arr::get($magic, 'api_key', ''));
-
         if (!$apiKey) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (no api key found in titan_tenant_links or config)']];
         }
-
-        // Build client/provider per-call so the correct key is used (tenant-safe)
-        $client = new TitanAiClient($baseUrl, $apiKey, $timeout);
-        $provider = new TitanAiProvider($client);
 
         // Audit log (best-effort)
         $runId = null;
@@ -69,7 +60,7 @@ class TitanCoreRouter
             }
         } catch (\Throwable $e) {}
 
-        $result = $provider->invoke($request, $magic);
+        $result = $this->provider->invoke($request, $magic);
 
         try {
             if ($runId && DB::getSchemaBuilder()->hasTable('ai_runs')) {

@@ -35,7 +35,7 @@ class TitanCorePlatformIntegrationServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(TitanCoreAIService::class, fn () => new TitanCoreAIService());
+        $this->app->singleton(TitanCoreAIService::class);
 
         $this->app->singleton(AssetDiscoveryService::class, fn () => new AssetDiscoveryService(
             new AssetManifestValidator()
