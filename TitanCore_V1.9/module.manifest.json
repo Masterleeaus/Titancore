@@ -1,0 +1,31 @@
+{
+    "name": "TitanCore",
+    "enabled": true,
+    "priority": 10,
+    "providers": [
+        "Modules\\TitanCore\\Providers\\TitanCoreServiceProvider"
+    ],
+    "filament": {
+        "panels": [
+            "*"
+        ],
+        "navigation": true,
+        "resources_path": "Filament/Resources",
+        "pages_path": "Filament/Pages",
+        "widgets_path": "Filament/Widgets"
+    },
+    "health": {
+        "checks": [
+            "provider_exists",
+            "filament_resources_valid",
+            "translations_loaded",
+            "routes_present",
+            "migrations_present"
+        ],
+        "report_path": "Health/reports/latest.json"
+    },
+    "repair": {
+        "recipes_path": "Repair/repair.php",
+        "safe_auto_repair": true
+    }
+}

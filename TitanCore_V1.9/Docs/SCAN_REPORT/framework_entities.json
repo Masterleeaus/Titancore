@@ -1,0 +1,46 @@
+{
+  "controllers": [
+    "AICore/app/Http/Controllers/AIRequestLogController.php",
+    "AICore/app/Http/Controllers/AIModelController.php",
+    "AICore/app/Http/Controllers/AIDashboardController.php",
+    "AICore/app/Http/Controllers/AISettingsController.php",
+    "AICore/app/Http/Controllers/AIProviderController.php",
+    "AICore/app/Http/Controllers/AIUsageController.php",
+    "AICore/app/Http/Controllers/AIModuleConfigurationController.php",
+    "AICore/app/Http/Controllers/AICoreController.php",
+    "AICore/app/Http/Controllers/Api/AIUsageApiController.php",
+    "AICore/app/Http/Controllers/Api/AIController.php",
+    "AICore/app/Http/Controllers/Api/AIProviderApiController.php",
+    "AICore/Http/Controllers/PromptController.php",
+    "AICore/Http/Controllers/Api/ChatApiController.php",
+    "AICore/Http/Controllers/Api/PromptApiController.php",
+    "AICore/Http/Controllers/Api/KbApiController.php",
+    "AICore/Http/Controllers/Api/ToolsApiController.php",
+    "AICore/Http/Controllers/Api/MetricsController.php",
+    "AICore/Http/Controllers/Admin/UsageController.php"
+  ],
+  "providers": [
+    "AICore/app/Providers/EventServiceProvider.php",
+    "AICore/app/Providers/RouteServiceProvider.php",
+    "AICore/app/Providers/AICoreServiceProvider.php",
+    "AICore/Providers/AIServiceProvider.php"
+  ],
+  "migrations": [
+    "AICore/database/migrations/2025_08_08_155751_create_ai_request_logs_table.php",
+    "AICore/database/migrations/2025_08_02_024424_create_ai_providers_table.php",
+    "AICore/database/migrations/2025_08_02_024425_create_ai_models_table.php",
+    "AICore/database/migrations/2025_08_08_134759_create_ai_module_configurations_table.php",
+    "AICore/database/migrations/2025_08_02_024426_create_ai_usage_logs_table.php"
+  ],
+  "seeders": [
+    "AICore/database/seeders/AICorePermissionSeeder.php",
+    "AICore/database/seeders/DefaultAIProvidersSeeder.php",
+    "AICore/database/seeders/AICoreSettingsSeeder.php",
+    "AICore/database/seeders/SampleUsageDataSeeder.php",
+    "AICore/database/seeders/AICoreDatabaseSeeder.php"
+  ],
+  "events_jobs": [
+    "AICore/Events/AiRequestCompleted.php"
+  ],
+  "policies": []
+}

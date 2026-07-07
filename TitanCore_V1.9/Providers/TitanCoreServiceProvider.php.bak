@@ -1,0 +1,19 @@
+<?php
+
+namespace Modules\TitanCore\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Route;
+
+class TitanCoreServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'titancore');
+
+        Route::middleware(['web','auth'])
+            ->prefix('account/titan/core')
+            ->name('titan.core.')
+            ->group(__DIR__ . '/../routes/account.php');
+    }
+}

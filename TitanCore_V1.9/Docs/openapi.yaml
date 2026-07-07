@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: TitanCore API
+  version: 0.3.0
+servers:
+  - url: /api
+paths:
+  /titancore/status:
+    get:
+      summary: Provider status
+      tags: [Health]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  provider: { type: string }
+                  ts: { type: string, format: date-time }
+  /titancore/prompts:
+    get:
+      summary: List prompts (RBAC: titancore.view)
+      tags: [Prompts]
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create prompt (RBAC: titancore.manage)
+      tags: [Prompts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                slug: { type: string }
+                content: { type: string }
+      responses:
+        '201': { description: Created }
+  /titancore/tools:
+    get:
+      summary: List tools
+      tags: [Tools]
+      responses:
+        '200': { description: OK }
+  /titancore/usage:
+    get:
+      summary: Usage metrics (RBAC: titancore.manage)
+      tags: [Metrics]
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []

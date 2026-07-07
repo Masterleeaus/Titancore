@@ -1,0 +1,8 @@
+{
+  "php_requirement": [],
+  "extensions_detected_heuristic": [
+    "json",
+    "pdo",
+    "redis"
+  ]
+}
