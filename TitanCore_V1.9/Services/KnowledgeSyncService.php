@@ -8,6 +8,8 @@ use Modules\TitanCore\Entities\TitanCoreSetting;
 
 class KnowledgeSyncService
 {
+    public function __construct(private EmbeddingService $embedding) {}
+
     /**
      * Sync the Worksuite core Knowledge Base into Titan Core's KB engine.
      */
@@ -31,9 +33,6 @@ class KnowledgeSyncService
         $query = (new $modelClass())->newQuery();
         $articles = $query->get();
 
-        /** @var \Modules\TitanCore\Services\EmbeddingService $embedding */
-        $embedding = app(EmbeddingService::class);
-
         foreach ($articles as $article) {
             $companyId = $companyCol ? $article->{$companyCol} : null;
 
@@ -54,7 +53,7 @@ class KnowledgeSyncService
             );
 
             // Re-chunk & embed using Titan Core's KB engine
-            $embedding->ingestDocumentFromRaw(
+            $this->embedding->ingestDocumentFromRaw(
                 'kb:' . $article->getKey(),
                 $article->{$titleCol},
                 $article->{$bodyCol},

@@ -31,7 +31,7 @@ class ModulesManifestCacheCommand extends Command
     /** Default cache file name, written to bootstrap/cache/. */
     public const CACHE_FILENAME = 'titan_manifests.php';
 
-    public function handle(): int
+    public function handle(TitanModuleManifestSnapshotStore $snapshotStore): int
     {
         $cachePath = $this->resolveCachePath();
 
@@ -39,15 +39,14 @@ class ModulesManifestCacheCommand extends Command
             return $this->clearCache($cachePath);
         }
 
-        return $this->buildCache($cachePath);
+        return $this->buildCache($cachePath, $snapshotStore);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
 
-    private function buildCache(string $cachePath): int
+    private function buildCache(string $cachePath, TitanModuleManifestSnapshotStore $snapshotStore): int
     {
         $modulesBase = base_path(config('titan-modules.path', 'Modules'));
-        $snapshotStore = app(TitanModuleManifestSnapshotStore::class);
 
         if (! is_dir($modulesBase)) {
             $this->components->error("Modules directory not found: {$modulesBase}");

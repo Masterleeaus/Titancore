@@ -48,7 +48,7 @@ Route::prefix('titancore')
 // Superadmin (System) routes
 Route::group([
     'prefix' => 'admin/settings/titancore',
-    'middleware' => ['web', 'auth'],
+    'middleware' => ['web', 'auth', 'super-admin'],
 ], function () {
     Route::get('/titanai', [TitanAiConsoleController::class, 'index'])->name('titancore.admin.titanai.console');
 });
@@ -70,14 +70,14 @@ Route::group([
 | PASS 5: Titan AI Settings (Admin)
 |--------------------------------------------------------------------------
 */
-Route::group(['middleware' => ['auth']], function () {
+Route::group(['middleware' => ['auth', 'super-admin']], function () {
     Route::get('/titan-core/ai/settings', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'index'])->name('titan.core.ai.settings');
     Route::post('/titan-core/ai/settings/sync-agents', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'syncAgents'])->name('titan.core.ai.settings.sync_agents');
     Route::post('/titan-core/ai/settings/sync-titandocs', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'syncTitanDocs'])->name('titan.core.ai.settings.sync_titandocs');
     Route::post('/titan-core/ai/settings/save', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'save'])->name('titan.core.ai.settings.save');
 });
 
-Route::group(['middleware' => ['auth']], function () {
+Route::group(['middleware' => ['auth', 'super-admin']], function () {
     Route::post('/titan-core/ai/settings/test-agent', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'testAgent'])->name('titan.core.ai.settings.test_agent');
     Route::post('/titan-core/ai/settings/re-embed-missing', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'reEmbedMissing'])->name('titan.core.ai.settings.re_embed_missing');
     Route::post('/titan-core/ai/settings/publish-kb-snapshot', [\Modules\TitanCore\Http\Controllers\Admin\TitanAISettingsController::class, 'publishKbSnapshot'])->name('titan.core.ai.settings.publish_kb_snapshot');
