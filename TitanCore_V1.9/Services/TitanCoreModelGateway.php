@@ -34,7 +34,7 @@ class TitanCoreModelGateway
     public function __construct(
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
-        protected ?TitanCoreAiProvider $proxyProvider = null,
+        protected ?TitanCoreAiProvider $toolProvider = null,
     ) {
         $this->chatFailoverState = ProviderFailoverChain::newStateStore();
         $this->embeddingFailoverState = ProviderFailoverChain::newStateStore();
@@ -220,8 +220,8 @@ class TitanCoreModelGateway
 
     protected function resolveTitanCoreAiProvider(): TitanCoreAiProvider
     {
-        if ($this->proxyProvider) {
-            return $this->proxyProvider;
+        if ($this->toolProvider) {
+            return $this->toolProvider;
         }
 
         if ($this->container) {
