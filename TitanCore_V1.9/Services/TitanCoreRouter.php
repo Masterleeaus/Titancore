@@ -6,7 +6,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use Modules\TitanCore\Services\Providers\TitanAiProvider;
+use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 
 /**
  * TitanCoreRouter
@@ -20,7 +20,7 @@ use Modules\TitanCore\Services\Providers\TitanAiProvider;
  */
 class TitanCoreRouter
 {
-    public function __construct(protected TitanAiProvider $provider) {}
+    public function __construct(protected TitanCoreAiProvider $provider) {}
 
     public function invokeTool(array $request): array
     {
