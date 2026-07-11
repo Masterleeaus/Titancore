@@ -31,6 +31,9 @@ class GenerateManifestCommand extends Command
     /** Extensions / file-names to skip entirely */
     private const SKIP_EXTENSIONS = ['pyc', 'pyo', 'cache', 'log'];
 
+    /** Individual files to exclude from hashing */
+    private const SKIP_FILES = ['MANIFEST.sha256'];
+
     /** Directories to exclude from the walk */
     private const SKIP_DIRS = ['vendor', 'node_modules', '.git', 'storage'];
 
@@ -118,6 +121,10 @@ class GenerateManifestCommand extends Command
             // Skip excluded extensions
             $ext = strtolower($file->getExtension());
             if (in_array($ext, self::SKIP_EXTENSIONS, true)) {
+                continue;
+            }
+
+            if (in_array($relPath, self::SKIP_FILES, true)) {
                 continue;
             }
 

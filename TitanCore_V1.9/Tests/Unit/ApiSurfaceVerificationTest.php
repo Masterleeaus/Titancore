@@ -34,4 +34,13 @@ class ApiSurfaceVerificationTest extends TestCase
         $this->assertStringContainsString("config('titan_model_runtime.failover.chat_providers', [])", $controller);
         $this->assertStringContainsString("config('titan_model_runtime.failover.embedding_providers', [])", $controller);
     }
+
+    public function test_manifest_generation_skips_manifest_file_itself(): void
+    {
+        $command = file_get_contents(__DIR__ . '/../../Console/Commands/GenerateManifestCommand.php');
+
+        $this->assertIsString($command);
+        $this->assertStringContainsString("private const SKIP_FILES = ['MANIFEST.sha256'];", $command);
+        $this->assertStringContainsString("if (in_array(\$relPath, self::SKIP_FILES, true))", $command);
+    }
 }
