@@ -118,6 +118,7 @@ class PlatformController extends Controller
                 'openai_configured'     => (bool) (config('titan-ai.providers.openai.api_key') ?? config('openai.api_key')),
                 'elevenlabs_configured' => (bool) config('services.elevenlabs.api_key'),
                 'twilio_configured'     => (bool) (config('services.twilio.account_sid') && config('services.twilio.auth_token')),
+                'titanai_configured'    => (bool) config('titancore.providers.titanai.base_url'),
                 'magicai_configured'    => (bool) config('titancore.magicai.base_url'),
             ],
             'limits'          => [

@@ -196,14 +196,34 @@ class ProvidersController extends Controller
      */
     public function failover(): JsonResponse
     {
-        $enabled = (bool) config('titan_model_runtime.failover.enabled', false);
-        $chain   = config('titan_model_runtime.failover.chain', []);
+        $enabled            = (bool) config('titan_model_runtime.failover.enabled', false);
+        $legacyChain        = config('titan_model_runtime.failover.chain', []);
+        $chatProviders      = $this->applyLegacyFailoverFallback(
+            config('titan_model_runtime.failover.chat_providers', []),
+            $legacyChain,
+        );
+        $embeddingProviders = $this->applyLegacyFailoverFallback(
+            config('titan_model_runtime.failover.embedding_providers', []),
+            $legacyChain,
+        );
 
         return response()->json([
-            'enabled'  => $enabled,
-            'chain'    => $chain,
-            'ts'       => now()->toIso8601String(),
+            'enabled'             => $enabled,
+            'chat_providers'      => $chatProviders,
+            'embedding_providers' => $embeddingProviders,
+            // Deprecated compatibility alias for older clients; migrate to chat_providers before the next breaking API version.
+            'chain'               => $chatProviders,
+            'ts'                  => now()->toIso8601String(),
         ]);
+    }
+
+    private function applyLegacyFailoverFallback(array $providers, array $legacyChain): array
+    {
+        if ($providers === [] && $legacyChain !== []) {
+            return $legacyChain;
+        }
+
+        return $providers;
     }
 
     /**
