@@ -6,12 +6,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 
 /**
  * TitanCoreRouter
  *
- * Routes invocations to backend providers (Titan AI currently).
+ * Routes invocations through the canonical TitanCore model gateway.
  *
  * Key resolution order (Titan AI):
  * 1) Tenant/company context key (titan_tenant_links where company_id = active company id)
@@ -20,19 +19,21 @@ use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
  */
 class TitanCoreRouter
 {
-    public function __construct(protected TitanCoreAiProvider $provider) {}
+    protected const FALLBACK_COMPANY_ID = 1;
+
+    public function __construct(protected TitanCoreModelGateway $gateway) {}
 
     public function invokeTool(array $request): array
     {
         $providers = config('titancore.providers', []);
-        $magic = Arr::get($providers, 'titanai', []);
+        $providerConfig = Arr::get($providers, 'titanai', []);
 
-        if (!Arr::get($magic, 'enabled', false)) {
+        if (!Arr::get($providerConfig, 'enabled', false)) {
             return ['ok' => false, 'status' => 503, 'body' => ['error' => 'Titan AI provider disabled']];
         }
 
-        $baseUrl = (string) Arr::get($magic, 'base_url', '');
-        $apiKey = $this->resolvetitanaiKey((string) Arr::get($magic, 'api_key', ''));
+        $baseUrl = (string) Arr::get($providerConfig, 'base_url', '');
+        $apiKey = $this->resolveTitanAIKey((string) Arr::get($providerConfig, 'api_key', ''));
 
         if (!$baseUrl) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (base_url)']];
@@ -47,7 +48,7 @@ class TitanCoreRouter
         try {
             if (DB::getSchemaBuilder()->hasTable('ai_runs')) {
                 $runId = DB::table('ai_runs')->insertGetId([
-                    'company_id' => $this->resolveCompanyIdFromContext() ?: 1,
+                    'company_id' => $this->resolveCompanyIdFromContext() ?: self::FALLBACK_COMPANY_ID,
                     'user_id' => Auth::check() ? Auth::id() : null,
                     'provider' => 'titanai',
                     'action' => (string) (\Illuminate\Support\Arr::get($request, 'tool') ?: 'proxy'),
@@ -60,7 +61,16 @@ class TitanCoreRouter
             }
         } catch (\Throwable $e) {}
 
-        $result = $this->provider->invoke($request, $magic);
+        $runtimeConfig = array_merge($providerConfig, [
+            'api_key' => $apiKey,
+        ]);
+
+        $result = $this->gateway->invokeProxyRequest($request, $runtimeConfig, [
+            'provider' => 'titanai',
+            'company_id' => $this->resolveCompanyIdFromContext() ?: self::FALLBACK_COMPANY_ID,
+            'user_id' => Auth::check() ? Auth::id() : null,
+            'feature' => $this->resolveFeatureName($request),
+        ]);
 
         try {
             if ($runId && DB::getSchemaBuilder()->hasTable('ai_runs')) {
@@ -122,9 +132,9 @@ class TitanCoreRouter
     }
 
     /**
-     * Get Titan AI API key with tenant resolution + fallback.
+     * Get Titan AI API key with tenant resolution + fallback rules.
      */
-    protected function resolvetitanaiKey(string $configFallbackKey = ''): string
+    protected function resolveTitanAIKey(string $configFallbackKey = ''): string
     {
         $companyId = $this->resolveCompanyIdFromContext();
 
@@ -133,7 +143,7 @@ class TitanCoreRouter
 
         // Second: fallback to company 1
         if (!$key) {
-            $key = $this->lookupKeyForCompany(1);
+            $key = $this->lookupKeyForCompany(self::FALLBACK_COMPANY_ID);
         }
 
         // Third: config/env fallback
@@ -142,6 +152,11 @@ class TitanCoreRouter
         }
 
         return (string) ($key ?: '');
+    }
+
+    protected function resolveFeatureName(array $request): string
+    {
+        return (string) (Arr::get($request, 'tool') ?: 'proxy');
     }
 
     protected function lookupKeyForCompany(?int $companyId): ?string

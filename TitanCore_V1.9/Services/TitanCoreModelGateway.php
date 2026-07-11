@@ -11,6 +11,7 @@ use Modules\TitanCore\AI\Providers\OpenAiChatProvider;
 use Modules\TitanCore\AI\Providers\OpenAiEmbeddingProvider;
 use Modules\TitanCore\Contracts\AI\ChatProviderContract;
 use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
+use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 use Modules\TitanCore\Services\UsageCostLogger;
 
 /**
@@ -33,6 +34,7 @@ class TitanCoreModelGateway
     public function __construct(
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
+        protected ?TitanCoreAiProvider $toolProvider = null,
     ) {
         $this->chatFailoverState = ProviderFailoverChain::newStateStore();
         $this->embeddingFailoverState = ProviderFailoverChain::newStateStore();
@@ -83,6 +85,28 @@ class TitanCoreModelGateway
     {
         $chatProvider = $this->resolveChatProvider($providerKey);
         return $chatProvider->health();
+    }
+
+    /**
+     * Route TitanCore proxy requests through the canonical TitanCore AI provider.
+     *
+     * @param  array  $request  Proxy request payload containing method/path/payload/headers or tool/input values.
+     * @param  array  $config   Provider runtime config such as allowed path prefixes and upstream credentials.
+     * @param  array  $context  Telemetry context such as provider, company_id, user_id, and feature name.
+     * @return array{ok: bool, status?: int, headers?: array, body?: mixed, provider?: string, latency_ms?: int}
+     */
+    public function invokeProxyRequest(array $request, array $config = [], array $context = []): array
+    {
+        $startedAt = microtime(true);
+        $provider = $this->resolveTitanCoreAiProvider();
+        $result = $provider->invoke($request, $config);
+
+        $result['provider'] ??= 'titanai';
+        $result['latency_ms'] ??= (int) round((microtime(true) - $startedAt) * 1000);
+
+        $this->logUsage('proxy', $result, $context);
+
+        return $result;
     }
 
     // -------------------------------------------------------------------------
@@ -189,14 +213,43 @@ class TitanCoreModelGateway
             try {
                 return $this->container->make($class);
             } catch (\Throwable $e) {
+                $code = is_int($e->getCode()) ? $e->getCode() : 0;
+
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
-                    previous: $e,
+                    $code,
+                    $e,
                 );
             }
         }
 
         return new $class();
+    }
+
+    protected function resolveTitanCoreAiProvider(): TitanCoreAiProvider
+    {
+        if ($this->toolProvider) {
+            return $this->toolProvider;
+        }
+
+        if ($this->container) {
+            try {
+                return $this->container->make(TitanCoreAiProvider::class);
+            } catch (\Throwable $e) {
+                $code = is_int($e->getCode()) ? $e->getCode() : 0;
+
+                throw new \RuntimeException(
+                    sprintf('TitanCore failed to resolve AI proxy provider [%s]: %s', TitanCoreAiProvider::class, $e->getMessage()),
+                    $code,
+                    $e,
+                );
+            }
+        }
+
+        throw new \RuntimeException(sprintf(
+            'TitanCore could not resolve [%s] for proxy requests because no container was available and no provider was injected.',
+            TitanCoreAiProvider::class,
+        ));
     }
 
     // -------------------------------------------------------------------------

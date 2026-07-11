@@ -2,14 +2,17 @@
 
 namespace Modules\TitanCore\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class TitanAiConsoleController extends Controller
 {
+    protected function viewName(): string
+    {
+        return 'titancore::admin.titanai.console';
+    }
+
     public function index()
     {
-        // Simple view-only console; calls TitanCore API endpoints from the browser
-        return view('titancore::admin.titanai.console');
+        return view($this->viewName());
     }
 }

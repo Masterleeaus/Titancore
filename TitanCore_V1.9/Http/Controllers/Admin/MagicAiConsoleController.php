@@ -2,13 +2,10 @@
 
 namespace Modules\TitanCore\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-
-class MagicAiConsoleController extends Controller
+class MagicAiConsoleController extends TitanAiConsoleController
 {
-    public function index()
+    protected function viewName(): string
     {
-        // Simple view-only console; calls TitanCore API endpoints from the browser
-        return view('titancore::admin.magicai.console');
+        return 'titancore::admin.magicai.console';
     }
 }

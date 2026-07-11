@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\TitanCore\Http\Controllers\Api\ChatApiController;
 use Modules\TitanCore\Http\Controllers\Api\KbApiController;
+use Modules\TitanCore\Http\Controllers\Api\MagicAiProxyController;
 use Modules\TitanCore\Http\Controllers\Api\MetricsController;
 use Modules\TitanCore\Http\Controllers\Api\PlatformHealthController;
 use Modules\TitanCore\Http\Controllers\Api\PromptApiController;
@@ -65,6 +66,13 @@ Route::prefix('titancore')
         Route::match(['GET','POST','PUT','PATCH','DELETE'], '/titanai/proxy/{any}', [TitanAiProxyController::class, 'proxy'])
             ->where('any', '.*')
             ->name('titanai.proxy.any');
+
+        // magicai compatibility passthrough
+        Route::get('/magicai/ping', [MagicAiProxyController::class, 'ping'])->name('magicai.ping');
+        Route::match(['GET','POST','PUT','PATCH','DELETE'], '/magicai/proxy', [MagicAiProxyController::class, 'proxy'])->name('magicai.proxy');
+        Route::match(['GET','POST','PUT','PATCH','DELETE'], '/magicai/proxy/{any}', [MagicAiProxyController::class, 'proxy'])
+            ->where('any', '.*')
+            ->name('magicai.proxy.any');
 
 });
 

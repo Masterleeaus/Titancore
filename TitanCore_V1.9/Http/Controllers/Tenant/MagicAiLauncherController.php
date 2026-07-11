@@ -2,12 +2,10 @@
 
 namespace Modules\TitanCore\Http\Controllers\Tenant;
 
-use Illuminate\Routing\Controller;
-
-class MagicAiLauncherController extends Controller
+class MagicAiLauncherController extends TitanAiLauncherController
 {
-    public function index()
+    protected function viewName(): string
     {
-        return view('titancore::tenant.magicai.launcher');
+        return 'titancore::tenant.magicai.launcher';
     }
 }
