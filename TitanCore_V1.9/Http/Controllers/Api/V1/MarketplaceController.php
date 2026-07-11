@@ -20,7 +20,7 @@ use Modules\TitanCore\Services\Upgrade\VersionCompatibilityChecker;
  *   - Compatibility pre-checks
  *   - Dependency resolution preview
  *
- * Phase 10 of the Titan Platform Manager.
+ * Phase 15 of the Titan Platform Manager.
  */
 class MarketplaceController extends Controller
 {

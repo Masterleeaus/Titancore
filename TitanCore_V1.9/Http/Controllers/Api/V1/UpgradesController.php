@@ -15,7 +15,7 @@ use Modules\TitanCore\Services\Upgrade\VersionCompatibilityChecker;
  * Manages platform upgrades, SDK upgrades, module upgrades,
  * migrations, rollbacks, upgrade validation, and post-upgrade verification.
  *
- * Phase 9 of the Titan Platform Manager.
+ * Phase 14 of the Titan Platform Manager.
  */
 class UpgradesController extends Controller
 {

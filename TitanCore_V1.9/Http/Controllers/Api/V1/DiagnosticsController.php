@@ -353,11 +353,13 @@ class DiagnosticsController extends Controller
 
                 $entry = ['contract' => $fqn, 'file' => $relative, 'ok' => true];
 
-                // Verify PHP syntax
-                $lint = shell_exec('php -l ' . escapeshellarg($file->getPathname()) . ' 2>&1');
-                if ($lint !== null && ! str_contains($lint, 'No syntax errors detected')) {
+                // Verify PHP syntax using token_get_all() — safe, in-process, no shell_exec
+                try {
+                    $source = (string) file_get_contents($file->getPathname());
+                    token_get_all($source, TOKEN_PARSE);
+                } catch (\ParseError $e) {
                     $entry['ok']    = false;
-                    $entry['error'] = trim($lint);
+                    $entry['error'] = $e->getMessage();
                     $issues[]       = $fqn;
                 }
 
