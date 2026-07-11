@@ -196,13 +196,16 @@ class ProvidersController extends Controller
      */
     public function failover(): JsonResponse
     {
-        $enabled = (bool) config('titan_model_runtime.failover.enabled', false);
-        $chain   = config('titan_model_runtime.failover.chain', []);
+        $enabled            = (bool) config('titan_model_runtime.failover.enabled', false);
+        $chatProviders      = config('titan_model_runtime.failover.chat_providers', []);
+        $embeddingProviders = config('titan_model_runtime.failover.embedding_providers', []);
 
         return response()->json([
-            'enabled'  => $enabled,
-            'chain'    => $chain,
-            'ts'       => now()->toIso8601String(),
+            'enabled'             => $enabled,
+            'chat_providers'      => $chatProviders,
+            'embedding_providers' => $embeddingProviders,
+            'chain'               => $chatProviders,
+            'ts'                  => now()->toIso8601String(),
         ]);
     }
 

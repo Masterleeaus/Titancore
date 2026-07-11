@@ -84,6 +84,7 @@ Route::prefix('v1')
     ->middleware(['auth', 'super-admin'])
     ->as('titancore.v1.')
     ->group(function () {
+        Route::get('/health', PlatformHealthController::class)->name('health');
 
         // ── Phase 1: Platform API ──────────────────────────────────────────
         Route::prefix('platform')->as('platform.')->group(function () {
