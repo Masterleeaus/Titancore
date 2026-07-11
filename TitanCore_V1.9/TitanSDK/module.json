@@ -21,6 +21,10 @@
     "start.php"
   ],
   "filament_panel": "titanpro",
+  "filament_panels": [
+    "super_admin",
+    "platform_admin"
+  ],
   "active": 1,
   "capabilities": [
     "chat",

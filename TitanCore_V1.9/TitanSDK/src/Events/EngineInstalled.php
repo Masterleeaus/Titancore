@@ -6,6 +6,7 @@ class EngineInstalled
 {
     public readonly string $engineId;
     public readonly string $version;
+    public readonly ?string $correlationId;
     public readonly string $occurredAt;
     public readonly string $eventVersion;
 
@@ -14,9 +15,11 @@ class EngineInstalled
         string $version,
         ?string $occurredAt = null,
         string $eventVersion = '1.0.0',
+        ?string $correlationId = null,
     ) {
         $this->engineId = $engineId;
         $this->version = $version;
+        $this->correlationId = $correlationId;
         $this->occurredAt = $occurredAt ?? gmdate('c');
         $this->eventVersion = $eventVersion;
     }

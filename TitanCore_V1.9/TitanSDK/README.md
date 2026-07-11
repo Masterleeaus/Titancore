@@ -28,9 +28,14 @@ TitanCore remains the Platform Kernel implementation; TitanSDK contains only the
 - `TitanSDK\Contracts\AI\ToolExecutorContract`
 - `TitanSDK\Contracts\AI\ToolRollbackContract`
 - `TitanSDK\Contracts\AI\VectorStoreContract`
+- `TitanSDK\Contracts\Engine\EngineContract`
+- `TitanSDK\Contracts\Engine\EngineManagerContract`
 
 ### Events
 - `TitanSDK\Events\AiRequestCompleted`
+- `TitanSDK\Events\EngineInstalled`
+- `TitanSDK\Events\EngineLifecycleChanged`
+- `TitanSDK\Events\EngineValidated`
 
 ### Exceptions
 - `TitanSDK\Exceptions\AI\ToolHandlerNotFoundException`
@@ -65,7 +70,11 @@ These remain internal because they contain runtime orchestration, provider integ
 ## Namespace mapping
 
 - `Modules\TitanCore\Contracts\AI\*` → `TitanSDK\Contracts\AI\*`
+- `Modules\TitanCore\Contracts\Engine\*` → `TitanSDK\Contracts\Engine\*`
 - `Modules\TitanCore\Events\AiRequestCompleted` → `TitanSDK\Events\AiRequestCompleted`
+- `Modules\TitanCore\Events\EngineInstalled` → `TitanSDK\Events\EngineInstalled`
+- `Modules\TitanCore\Events\EngineLifecycleChanged` → `TitanSDK\Events\EngineLifecycleChanged`
+- `Modules\TitanCore\Events\EngineValidated` → `TitanSDK\Events\EngineValidated`
 - `Modules\TitanCore\Exceptions\AI\*` → `TitanSDK\Exceptions\AI\*`
 - `Modules\TitanCore\AI\ValueObjects\ToolContext` → `TitanSDK\ValueObjects\ToolContext`
 - `Modules\TitanCore\AI\ValueObjects\ToolResult` → `TitanSDK\ValueObjects\ToolResult`

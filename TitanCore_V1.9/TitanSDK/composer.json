@@ -1,7 +1,8 @@
 {
   "name": "modules/titansdk",
-  "description": "TitanSDK \u2014 stable public integration surface for Titan modules",
+  "description": "TitanSDK — stable public integration surface for Titan modules",
   "type": "library",
+  "version": "1.0.0",
   "license": "MIT",
   "autoload": {
     "psr-4": {
