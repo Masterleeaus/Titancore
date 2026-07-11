@@ -43,7 +43,9 @@ use Modules\TitanCore\Console\Commands\Mdk\TitanDoctorCommand;
 use Modules\TitanCore\Console\Commands\Mdk\ValidateModuleCommand;
 use Modules\TitanCore\Console\SyncTitanEchoAssistCommand;
 use Modules\TitanCore\Services\Providers\TitanAiProvider;
+use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 use Modules\TitanCore\Services\TitanAiClient;
+use Modules\TitanCore\Services\TitanCoreAiClient;
 use Modules\TitanCore\Services\TitanCoreModelGateway;
 use Modules\TitanCore\Services\TitanCoreRouter;
 use Modules\TitanCore\Support\ModuleDependencyGraph;
@@ -167,9 +169,11 @@ class TitanCoreServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../Config/policies.php', 'titancore.policies');
         $this->mergeConfigFrom(__DIR__.'/../Config/metrics.php', 'titancore.metrics');
 
-        // Bind Titan AI client/provider/router (lazy + safe)
-        $this->app->singleton(TitanAiClient::class);
-        $this->app->singleton(TitanAiProvider::class);
+        // Bind canonical TitanCore AI client/provider + legacy aliases.
+        $this->app->singleton(TitanCoreAiClient::class);
+        $this->app->singleton(TitanAiClient::class, fn ($app) => $app->make(TitanCoreAiClient::class));
+        $this->app->singleton(TitanCoreAiProvider::class);
+        $this->app->singleton(TitanAiProvider::class, fn ($app) => $app->make(TitanCoreAiProvider::class));
         $this->app->singleton(TitanCoreRouter::class);
 
         // Model runtime gateway + failover chain
