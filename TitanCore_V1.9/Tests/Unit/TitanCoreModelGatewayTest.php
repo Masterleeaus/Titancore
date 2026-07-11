@@ -137,7 +137,7 @@ class TitanCoreModelGatewayTest extends TestCase
         $resolved ??= [];
 
         $container = $this->getMockBuilder(Container::class)
-            ->setMethods(['make'])
+            ->addMethods(['make'])
             ->getMock();
 
         $container->method('make')->willReturnCallback(function (string $abstract, array $parameters = []) use ($providers, &$resolved) {
