@@ -215,7 +215,8 @@ class TitanCoreModelGateway
             } catch (\Throwable $e) {
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
-                    previous: $e,
+                    0,
+                    $e,
                 );
             }
         }
@@ -235,7 +236,8 @@ class TitanCoreModelGateway
             } catch (\Throwable $e) {
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI proxy provider [%s]: %s', TitanCoreAiProvider::class, $e->getMessage()),
-                    previous: $e,
+                    0,
+                    $e,
                 );
             }
         }

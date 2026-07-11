@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Session;
  */
 class TitanCoreRouter
 {
+    protected const FALLBACK_COMPANY_ID = 1;
+
     public function __construct(protected TitanCoreModelGateway $gateway) {}
 
     public function invokeTool(array $request): array
@@ -46,7 +48,7 @@ class TitanCoreRouter
         try {
             if (DB::getSchemaBuilder()->hasTable('ai_runs')) {
                 $runId = DB::table('ai_runs')->insertGetId([
-                    'company_id' => $this->resolveCompanyIdFromContext() ?: 1,
+                    'company_id' => $this->resolveCompanyIdFromContext() ?: self::FALLBACK_COMPANY_ID,
                     'user_id' => Auth::check() ? Auth::id() : null,
                     'provider' => 'titanai',
                     'action' => (string) (\Illuminate\Support\Arr::get($request, 'tool') ?: 'proxy'),
@@ -65,7 +67,7 @@ class TitanCoreRouter
 
         $result = $this->gateway->invokeProxyRequest($request, $runtimeConfig, [
             'provider' => 'titanai',
-            'company_id' => $this->resolveCompanyIdFromContext() ?: 1,
+            'company_id' => $this->resolveCompanyIdFromContext() ?: self::FALLBACK_COMPANY_ID,
             'user_id' => Auth::check() ? Auth::id() : null,
             'feature' => $this->resolveFeatureName($request),
         ]);
@@ -141,7 +143,7 @@ class TitanCoreRouter
 
         // Second: fallback to company 1
         if (!$key) {
-            $key = $this->lookupKeyForCompany(1);
+            $key = $this->lookupKeyForCompany(self::FALLBACK_COMPANY_ID);
         }
 
         // Third: config/env fallback
