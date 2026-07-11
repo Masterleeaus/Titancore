@@ -7,6 +7,8 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Platform API — /api/v1/platform/*
@@ -198,5 +200,163 @@ class PlatformController extends Controller
             'telemetry' => $aggregate,
             'ts'        => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * GET /api/v1/platform/dashboard
+     *
+     * Aggregated real-time overview for the Platform Manager dashboard.
+     * Covers modules, providers, agents, workflows, tools, knowledge,
+     * queues, runtime health, version info, and service statuses.
+     */
+    public function dashboard(): JsonResponse
+    {
+        $meta    = $this->moduleMeta();
+        $modules = $this->countModules();
+        $health  = $this->quickHealthProbe();
+
+        // Aggregate telemetry
+        $telemetry = ['requests' => 0, 'tokens' => 0];
+        try {
+            if (DB::getSchemaBuilder()->hasTable('ai_usage')) {
+                $row = DB::table('ai_usage')
+                    ->selectRaw('COALESCE(SUM(requests), 0) as requests, COALESCE(SUM(tokens), 0) as tokens')
+                    ->first();
+                $telemetry['requests'] = (int) ($row->requests ?? 0);
+                $telemetry['tokens']   = (int) ($row->tokens ?? 0);
+            }
+        } catch (\Throwable) {}
+
+        // Count AI run log stats
+        $runtime = ['total' => 0, 'success' => 0, 'error' => 0, 'running' => 0];
+        try {
+            if (DB::getSchemaBuilder()->hasTable('ai_runs')) {
+                $rows = DB::table('ai_runs')
+                    ->selectRaw('status, COUNT(*) as cnt')
+                    ->groupBy('status')
+                    ->get();
+                foreach ($rows as $row) {
+                    $runtime['total'] += (int) $row->cnt;
+                    $runtime[$row->status ?? 'other'] = ($runtime[$row->status ?? 'other'] ?? 0) + (int) $row->cnt;
+                }
+            }
+        } catch (\Throwable) {}
+
+        return response()->json([
+            'platform' => [
+                'name'        => $meta['module']['name'] ?? 'TitanCore',
+                'version'     => $meta['version'] ?? 'unknown',
+                'sdk_version' => $meta['version'] ?? 'unknown',
+                'environment' => app()->environment(),
+                'php'         => PHP_VERSION,
+                'laravel'     => app()->version(),
+            ],
+            'modules' => $modules,
+            'health'  => $health,
+            'runtime' => $runtime,
+            'telemetry' => $telemetry,
+            'services' => [
+                'discovery' => 'ok',
+                'registry'  => 'ok',
+                'cache'     => $health['cache'] ?? 'unknown',
+                'database'  => $health['database'] ?? 'unknown',
+                'queue'     => $health['queue'] ?? 'unknown',
+                'storage'   => $health['storage'] ?? 'unknown',
+            ],
+            'ts' => now()->toIso8601String(),
+        ]);
+    }
+
+    // ── Private helpers ────────────────────────────────────────────────────────
+
+    /**
+     * Count installed / enabled / disabled modules.
+     *
+     * @return array{total: int, enabled: int, disabled: int}
+     */
+    private function countModules(): array
+    {
+        $statuses = [];
+        try {
+            $statusFile = base_path('modules_statuses.json');
+            if (is_file($statusFile)) {
+                $statuses = json_decode((string) file_get_contents($statusFile), true) ?: [];
+            }
+        } catch (\Throwable) {}
+
+        $modulesDir = base_path('Modules');
+        $total      = 0;
+        $enabled    = 0;
+        $disabled   = 0;
+
+        if (is_dir($modulesDir)) {
+            foreach (scandir($modulesDir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                if (! is_dir($modulesDir . DIRECTORY_SEPARATOR . $entry)) {
+                    continue;
+                }
+                $total++;
+                $isEnabled = (bool) ($statuses[$entry] ?? $statuses[strtolower($entry)] ?? true);
+                $isEnabled ? $enabled++ : $disabled++;
+            }
+        }
+
+        return ['total' => $total, 'enabled' => $enabled, 'disabled' => $disabled];
+    }
+
+    /**
+     * Run lightweight health probes (no deep checks) for the dashboard.
+     *
+     * @return array<string, string>
+     */
+    private function quickHealthProbe(): array
+    {
+        $probe = [];
+
+        // Database
+        try {
+            DB::connection()->getPdo();
+            $probe['database'] = 'ok';
+        } catch (\Throwable) {
+            $probe['database'] = 'critical';
+        }
+
+        // Cache
+        try {
+            $key = 'titan_dash_probe_' . uniqid('', true);
+            Cache::put($key, 'ok', 5);
+            $val = Cache::get($key);
+            Cache::forget($key);
+            $probe['cache'] = $val === 'ok' ? 'ok' : 'warning';
+        } catch (\Throwable) {
+            $probe['cache'] = 'critical';
+        }
+
+        // Queue
+        try {
+            $size = Queue::size();
+            $probe['queue'] = $size >= 1000 ? 'critical' : ($size >= 100 ? 'warning' : 'ok');
+        } catch (\Throwable) {
+            $probe['queue'] = 'ok';
+        }
+
+        // Storage
+        try {
+            $disk  = Storage::disk(config('filesystems.default', 'local'));
+            $p     = '.titan_dash_probe_' . uniqid('', true);
+            $disk->put($p, 'ok');
+            $disk->delete($p);
+            $probe['storage'] = 'ok';
+        } catch (\Throwable) {
+            $probe['storage'] = 'critical';
+        }
+
+        $statuses      = array_values($probe);
+        $probe['overall'] = in_array('critical', $statuses, true) ? 'critical'
+            : (in_array('warning', $statuses, true) ? 'warning' : 'ok');
+
+        return $probe;
     }
 }
