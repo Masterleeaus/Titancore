@@ -77,10 +77,10 @@ class PlatformAdministrationFramework
             return true;
         }
 
-        if ($permission === 'super-admin') {
-            return method_exists($user, 'hasRole') ? (bool) $user->hasRole('super-admin') : false;
+        if (method_exists($user, 'can') && (bool) $user->can($permission)) {
+            return true;
         }
 
-        return method_exists($user, 'can') ? (bool) $user->can($permission) : false;
+        return method_exists($user, 'hasRole') ? (bool) $user->hasRole($permission) : false;
     }
 }
