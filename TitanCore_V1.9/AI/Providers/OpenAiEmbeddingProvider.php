@@ -2,8 +2,6 @@
 
 namespace Modules\TitanCore\AI\Providers;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
 
 /**
@@ -15,6 +13,7 @@ use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
 class OpenAiEmbeddingProvider implements EmbeddingProviderContract
 {
     protected string $provider = 'openai';
+    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled in TitanCore Pass 1. Route embedding requests through TitanZero.';
 
     public function __construct(
         protected string $apiKey = '',
@@ -56,80 +55,7 @@ class OpenAiEmbeddingProvider implements EmbeddingProviderContract
             return $this->errorResponse('Missing OPENAI_API_KEY', $startMs);
         }
 
-        $model   = (string) ($options['model'] ?? $this->defaultModel);
-        $timeout = (int) ($options['timeout'] ?? $this->timeoutSeconds);
-
-        $payload = [
-            'model' => $model,
-            'input' => $input,
-        ];
-        if (isset($options['dimensions'])) {
-            $payload['dimensions'] = (int) $options['dimensions'];
-        }
-
-        try {
-            $response = Http::withToken($this->apiKey)
-                ->timeout($timeout)
-                ->post($this->baseUrl . '/v1/embeddings', $payload);
-        } catch (\Throwable $e) {
-            Log::error('[TitanCore][OpenAiEmbeddingProvider] HTTP error', [
-                'error' => $e->getMessage(),
-                'model' => $model,
-            ]);
-            return $this->errorResponse('HTTP request failed: ' . $e->getMessage(), $startMs);
-        }
-
-        $latencyMs = (int) round(microtime(true) * 1000) - $startMs;
-
-        if (!$response->ok()) {
-            $body     = $response->json() ?? [];
-            $errorMsg = data_get($body, 'error.message', 'OpenAI error ' . $response->status());
-            Log::warning('[TitanCore][OpenAiEmbeddingProvider] Non-OK response', [
-                'status' => $response->status(),
-                'model'  => $model,
-                'error'  => $errorMsg,
-            ]);
-            return [
-                'ok'         => false,
-                'vectors'    => null,
-                'usage'      => null,
-                'model'      => $model,
-                'latency_ms' => $latencyMs,
-                'provider'   => $this->provider,
-                'error'      => $errorMsg,
-                'status'     => $response->status(),
-            ];
-        }
-
-        $body    = $response->json() ?? [];
-        $data    = $body['data'] ?? [];
-        $vectors = array_map(fn ($item) => $item['embedding'] ?? [], $data);
-        $usage   = $body['usage'] ?? null;
-
-        $normalizedUsage = null;
-        if (is_array($usage)) {
-            $normalizedUsage = [
-                'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
-                'total_tokens'  => (int) ($usage['total_tokens'] ?? 0),
-            ];
-        }
-
-        Log::debug('[TitanCore][OpenAiEmbeddingProvider] Embed success', [
-            'model'      => $body['model'] ?? $model,
-            'count'      => count($vectors),
-            'tokens'     => $normalizedUsage,
-            'latency_ms' => $latencyMs,
-        ]);
-
-        return [
-            'ok'         => true,
-            'vectors'    => $vectors,
-            'usage'      => $normalizedUsage,
-            'model'      => $body['model'] ?? $model,
-            'latency_ms' => $latencyMs,
-            'provider'   => $this->provider,
-            'error'      => null,
-        ];
+        return $this->errorResponse(self::DISABLED_REASON, $startMs);
     }
 
     /**
@@ -141,23 +67,7 @@ class OpenAiEmbeddingProvider implements EmbeddingProviderContract
             return ['ok' => false, 'provider' => $this->provider, 'reason' => 'Missing OPENAI_API_KEY'];
         }
 
-        try {
-            $response = Http::withToken($this->apiKey)
-                ->timeout(10)
-                ->get($this->baseUrl . '/v1/models');
-
-            if ($response->ok()) {
-                return ['ok' => true, 'provider' => $this->provider, 'reason' => null];
-            }
-
-            return [
-                'ok'       => false,
-                'provider' => $this->provider,
-                'reason'   => 'API returned status ' . $response->status(),
-            ];
-        } catch (\Throwable $e) {
-            return ['ok' => false, 'provider' => $this->provider, 'reason' => $e->getMessage()];
-        }
+        return ['ok' => false, 'provider' => $this->provider, 'reason' => self::DISABLED_REASON];
     }
 
     /**
