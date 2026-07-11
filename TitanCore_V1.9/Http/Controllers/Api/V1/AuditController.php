@@ -122,7 +122,7 @@ class AuditController extends Controller
         if (Schema::hasTable(self::TOOL_LOG_TABLE)) {
             try {
                 $rows = DB::table(self::TOOL_LOG_TABLE)
-                    ->whereBetween(DB::raw('DATE(created_at)'), [$from, $to])
+                    ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
                     ->orderBy('created_at')
                     ->get()
                     ->toArray();

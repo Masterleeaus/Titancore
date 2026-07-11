@@ -87,8 +87,8 @@ class LogsController extends Controller
      */
     public function show(Request $request, string $filename): JsonResponse
     {
-        // Sanitise: only allow simple filenames with .log extension
-        if (! preg_match('/^[\w\-]+\.log$/', $filename)) {
+        // Sanitise: only allow simple filenames (alphanumeric, underscores, hyphens) with .log extension
+        if (! preg_match('/^[a-zA-Z0-9_-]+\.log$/', $filename)) {
             return response()->json(['error' => 'Invalid log filename'], 422);
         }
 
@@ -138,7 +138,7 @@ class LogsController extends Controller
      */
     private function readTail(string $path, int $n): array
     {
-        $fp = @fopen($path, 'rb');
+        $fp = fopen($path, 'rb');
         if (! $fp) {
             return [];
         }

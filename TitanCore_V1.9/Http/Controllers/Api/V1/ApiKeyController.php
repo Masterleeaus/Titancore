@@ -23,7 +23,9 @@ use Illuminate\Support\Str;
  */
 class ApiKeyController extends Controller
 {
-    private const TABLE = 'titan_api_keys';
+    private const TABLE      = 'titan_api_keys';
+    private const KEY_PREFIX = 'tk_';
+    private const KEY_LENGTH = 40;
 
     /**
      * GET /api/v1/api-keys
@@ -76,12 +78,13 @@ class ApiKeyController extends Controller
         ]);
 
         // Generate a cryptographically random key
-        $plainKey  = 'tk_' . Str::random(40);
+        $plainKey  = self::KEY_PREFIX . Str::random(self::KEY_LENGTH);
         $prefix    = substr($plainKey, 0, 12);
         $keyHash   = hash('sha256', $plainKey);
 
-        $userId    = auth()->id();
-        $companyId = auth()->user()?->company_id ?? null;
+        $user      = auth()->user();
+        $userId    = $user?->getAuthIdentifier();
+        $companyId = $user?->company_id ?? null;
 
         $id = DB::table(self::TABLE)->insertGetId([
             'name'        => $validated['name'],

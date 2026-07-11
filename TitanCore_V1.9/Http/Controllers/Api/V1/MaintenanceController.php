@@ -61,7 +61,7 @@ class MaintenanceController extends Controller
             'secret'  => 'nullable|string|max:120',
         ]);
 
-        $args = ['--' => true];  // Artisan expects `--` for no-interaction
+        $args = [];
 
         if (! empty($validated['message'])) {
             $args['--message'] = $validated['message'];
@@ -74,7 +74,7 @@ class MaintenanceController extends Controller
         }
 
         try {
-            \Illuminate\Support\Facades\Artisan::call('down', array_filter($args, fn ($v) => $v !== true));
+            \Illuminate\Support\Facades\Artisan::call('down', $args);
 
             return response()->json([
                 'ok'          => true,
