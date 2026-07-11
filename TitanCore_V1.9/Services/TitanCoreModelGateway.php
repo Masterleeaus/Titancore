@@ -34,6 +34,7 @@ class TitanCoreModelGateway
     public function __construct(
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
+        protected ?TitanCoreAiProvider $proxyProvider = null,
     ) {
         $this->chatFailoverState = ProviderFailoverChain::newStateStore();
         $this->embeddingFailoverState = ProviderFailoverChain::newStateStore();
@@ -219,6 +220,10 @@ class TitanCoreModelGateway
 
     protected function resolveTitanCoreAiProvider(): TitanCoreAiProvider
     {
+        if ($this->proxyProvider) {
+            return $this->proxyProvider;
+        }
+
         if ($this->container) {
             try {
                 return $this->container->make(TitanCoreAiProvider::class);
@@ -230,7 +235,9 @@ class TitanCoreModelGateway
             }
         }
 
-        return new TitanCoreAiProvider(new TitanCoreAiClient());
+        throw new \RuntimeException(
+            sprintf('TitanCore requires [%s] to be resolved through the container or injected explicitly.', TitanCoreAiProvider::class),
+        );
     }
 
     // -------------------------------------------------------------------------

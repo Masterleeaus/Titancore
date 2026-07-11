@@ -31,7 +31,7 @@ class TitanCoreRouter
         }
 
         $baseUrl = (string) Arr::get($providerConfig, 'base_url', '');
-        $apiKey = $this->resolvetitanaiKey((string) Arr::get($providerConfig, 'api_key', ''));
+        $apiKey = $this->resolveTitanAiKey((string) Arr::get($providerConfig, 'api_key', ''));
 
         if (!$baseUrl) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (base_url)']];
@@ -132,7 +132,7 @@ class TitanCoreRouter
     /**
      * Get Titan AI API key with tenant resolution + fallback.
      */
-    protected function resolvetitanaiKey(string $configFallbackKey = ''): string
+    protected function resolveTitanAiKey(string $configFallbackKey = ''): string
     {
         $companyId = $this->resolveCompanyIdFromContext();
 
