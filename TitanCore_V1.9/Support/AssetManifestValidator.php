@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Validates AI asset manifests (asset.json, provider.json, agent.json, tool.json,
- * prompt.json, workflow.json) for completeness and structural correctness.
+ * prompt.json, workflow.json, engine.json) for completeness and structural correctness.
  *
  * Designed for graceful failure: every public method returns a
  * {@see ManifestValidationResult} and never throws — callers decide whether
@@ -52,6 +52,7 @@ class AssetManifestValidator
         'tool'     => ['name', 'version', 'description', 'tools', 'capabilities', 'module'],
         'prompt'   => ['name', 'version', 'description', 'prompts', 'module'],
         'workflow' => ['name', 'version', 'description', 'workflows', 'capabilities', 'module'],
+        'engine'   => ['name', 'version', 'description', 'engines', 'capabilities', 'module'],
     ];
 
     /** Required subfields on each item within a provider 'providers' array */
@@ -66,13 +67,21 @@ class AssetManifestValidator
     /** Required subfields on each item within a prompt 'prompts' array */
     private const PROMPT_ITEM_REQUIRED = ['id', 'name', 'description', 'category', 'variables'];
 
+    /**
+     * Required subfields on each item within an engine 'engines' array.
+     *
+     * lifecycle is expected to be a non-empty status descriptor
+     * (for example: managed, registered, installed, loaded, running).
+     */
+    private const ENGINE_ITEM_REQUIRED = ['id', 'name', 'description', 'class', 'version', 'lifecycle'];
+
     // ── Public API ─────────────────────────────────────────────────────────────
 
     /**
      * Validate a manifest file on disk.
      *
      * @param  string       $filePath  Absolute path to the JSON file.
-     * @param  string|null  $type      Manifest type hint (asset|provider|agent|tool|prompt|workflow).
+     * @param  string|null  $type      Manifest type hint (asset|provider|agent|tool|prompt|workflow|engine).
      *                                 Auto-detects from filename when omitted.
      */
     public function validateFile(string $filePath, ?string $type = null): ManifestValidationResult
@@ -116,7 +125,7 @@ class AssetManifestValidator
      * Validate decoded manifest data against a given type.
      *
      * @param  array   $data
-     * @param  string  $type   asset|provider|agent|tool|prompt|workflow
+     * @param  string  $type   asset|provider|agent|tool|prompt|workflow|engine
      * @param  string  $label  Label for error messages (e.g. filename).
      */
     public function validateData(array $data, string $type, string $label = 'manifest'): ManifestValidationResult
@@ -185,6 +194,7 @@ class AssetManifestValidator
             'tool'     => $this->validateItems($data['tools'] ?? [], self::TOOL_ITEM_REQUIRED, 'tools', $label),
             'workflow' => $this->validateItems($data['workflows'] ?? [], self::WORKFLOW_ITEM_REQUIRED, 'workflows', $label),
             'prompt'   => $this->validateItems($data['prompts'] ?? [], self::PROMPT_ITEM_REQUIRED, 'prompts', $label),
+            'engine'   => $this->validateItems($data['engines'] ?? [], self::ENGINE_ITEM_REQUIRED, 'engines', $label),
             default    => [],
         };
 
@@ -281,6 +291,7 @@ class AssetManifestValidator
             str_starts_with($basename, 'tool')     => 'tool',
             str_starts_with($basename, 'prompt')   => 'prompt',
             str_starts_with($basename, 'workflow')  => 'workflow',
+            str_starts_with($basename, 'engine')   => 'engine',
             default                                => 'asset',
         };
     }

@@ -18,6 +18,7 @@ use PHPUnit\Framework\TestCase;
  *   tool.json     → 'tools'     array
  *   prompt.json   → 'prompts'   array
  *   workflow.json → 'workflows' array
+ *   engine.json   → 'engines'   array
  */
 class AssetDiscoveryTest extends TestCase
 {
@@ -209,6 +210,30 @@ class AssetDiscoveryTest extends TestCase
         ];
     }
 
+    private function minimalEngine(): array
+    {
+        return [
+            'name'               => 'TestEngines',
+            'version'            => '1.0.0',
+            'description'        => 'Test engines',
+            'schema_version'     => '1.0.0',
+            'module'             => 'TestModule',
+            'capabilities'       => ['engine-framework'],
+            'discovery_metadata' => ['asset_type' => 'engine_registry'],
+            'engines'            => [
+                [
+                    'id'           => 'test_engine',
+                    'name'         => 'Test Engine',
+                    'description'  => 'A test engine',
+                    'class'        => 'Modules\\TitanCore\\Services\\TitanCoreModelGateway',
+                    'version'      => '1.0.0',
+                    'lifecycle'    => 'managed',
+                    'capabilities' => ['chat'],
+                ],
+            ],
+        ];
+    }
+
     // ── Tests: directory handling ─────────────────────────────────────────────
 
     public function test_discover_from_missing_directory_returns_empty_with_error(): void
@@ -221,6 +246,7 @@ class AssetDiscoveryTest extends TestCase
         $this->assertEmpty($result['tools']);
         $this->assertEmpty($result['prompts']);
         $this->assertEmpty($result['workflows']);
+        $this->assertEmpty($result['engines']);
         $this->assertNotEmpty($result['errors']);
         $this->assertStringContainsString('not found', $result['errors'][0]);
     }
@@ -451,6 +477,7 @@ class AssetDiscoveryTest extends TestCase
         $this->writeJson('Tools/tool.json', $this->minimalTool());
         $this->writeJson('Workflows/workflow.json', $this->minimalWorkflow());
         $this->writeJson('Prompts/prompt.json', $this->minimalPrompt());
+        $this->writeJson('Engines/engine.json', $this->minimalEngine());
 
         $result = $this->service->discoverFromDirectory($this->tmpDir);
 
@@ -460,6 +487,7 @@ class AssetDiscoveryTest extends TestCase
         $this->assertCount(1, $result['tools']);
         $this->assertCount(1, $result['workflows']);
         $this->assertCount(1, $result['prompts']);
+        $this->assertCount(1, $result['engines']);
         $this->assertEmpty($result['errors']);
     }
 
@@ -483,6 +511,7 @@ class AssetDiscoveryTest extends TestCase
         mkdir($this->tmpDir . '/Providers', 0755, true);
         file_put_contents($this->tmpDir . '/Providers/provider.json', '{broken}');
         $this->writeJson('Tools/tool.json', $this->minimalTool());
+        $this->writeJson('Engines/engine.json', $this->minimalEngine());
         $this->writeJson('Agents/agent.json', $this->minimalAgent());
 
         $result = $this->service->discoverFromDirectory($this->tmpDir);
@@ -551,6 +580,7 @@ class AssetDiscoveryTest extends TestCase
         $this->writeJson('Agents/agent.json', $this->minimalAgent());
         $this->writeJson('Workflows/workflow.json', $this->minimalWorkflow());
         $this->writeJson('Tools/tool.json', $this->minimalTool());
+        $this->writeJson('Engines/engine.json', $this->minimalEngine());
 
         $discovered   = $this->service->discoverFromDirectory($this->tmpDir);
         $capabilities = $this->service->indexCapabilities($discovered);
@@ -559,6 +589,7 @@ class AssetDiscoveryTest extends TestCase
         $this->assertContains('embeddings', $capabilities); // asset.json
         $this->assertContains('rag', $capabilities);        // agent + workflow
         $this->assertContains('tool-execution', $capabilities); // agent + tool
+        $this->assertContains('engine-framework', $capabilities); // engine
         // No duplicates
         $this->assertSame(array_unique($capabilities), $capabilities);
     }
@@ -621,6 +652,7 @@ class AssetDiscoveryTest extends TestCase
         $this->assertNotEmpty($result['tools'], 'tools not discovered');
         $this->assertNotEmpty($result['prompts'], 'prompts not discovered');
         $this->assertNotEmpty($result['workflows'], 'workflows not discovered');
+        $this->assertNotEmpty($result['engines'], 'engines not discovered');
         $this->assertEmpty($result['errors'], 'Unexpected discovery errors: ' . implode('; ', $result['errors']));
     }
 }

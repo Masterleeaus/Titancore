@@ -601,4 +601,17 @@ class AssetManifestValidationTest extends TestCase
 
         $this->assertTrue($result->isValid(), 'agent.json failed validation: ' . implode('; ', $result->allMessages()));
     }
+
+    public function test_real_titancore_engine_json_is_valid(): void
+    {
+        $path = __DIR__ . '/../../AI/Engines/engine.json';
+
+        if (! file_exists($path)) {
+            $this->markTestSkipped('AI/Engines/engine.json not found.');
+        }
+
+        $result = $this->validator->validateFile($path, 'engine');
+
+        $this->assertTrue($result->isValid(), 'engine.json failed validation: ' . implode('; ', $result->allMessages()));
+    }
 }

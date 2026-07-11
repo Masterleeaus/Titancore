@@ -3,9 +3,11 @@
 namespace TitanSDK\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\TitanCore\Services\Engine\EngineManager;
 use Modules\TitanCore\Services\TitanCoreAIService;
 use Modules\TitanCore\Services\TitanCoreModelGateway;
 use TitanSDK\Services\TitanAIManager;
+use TitanSDK\Services\TitanEngineManager;
 
 class TitanSdkServiceProvider extends ServiceProvider
 {
@@ -19,8 +21,12 @@ class TitanSdkServiceProvider extends ServiceProvider
                 $app->make(TitanCoreModelGateway::class),
             );
         });
+        $this->app->singleton('titansdk.engine', fn ($app): TitanEngineManager => new TitanEngineManager(
+            $app->make(EngineManager::class),
+        ));
 
         $this->app->alias('titansdk.ai', TitanAIManager::class);
+        $this->app->alias('titansdk.engine', TitanEngineManager::class);
     }
 
     public function boot(): void

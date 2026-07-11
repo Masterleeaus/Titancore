@@ -66,6 +66,7 @@ class TitanSdkExtractionTest extends TestCase
             'AI/Providers/provider.json' => 'manifests/AI/Providers/provider.json',
             'AI/Tools/tool.json' => 'manifests/AI/Tools/tool.json',
             'AI/Workflows/workflow.json' => 'manifests/AI/Workflows/workflow.json',
+            'AI/Engines/engine.json' => 'manifests/AI/Engines/engine.json',
         ];
 
         foreach ($pairs as $source => $copy) {

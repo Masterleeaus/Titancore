@@ -5,6 +5,13 @@ namespace Modules\TitanCore\Providers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Modules\TitanCore\Services\AssetDiscoveryService;
+use Modules\TitanCore\Services\Engine\EngineDiscovery;
+use Modules\TitanCore\Services\Engine\EngineInstaller;
+use Modules\TitanCore\Services\Engine\EngineLifecycle;
+use Modules\TitanCore\Services\Engine\EngineLoader;
+use Modules\TitanCore\Services\Engine\EngineManager;
+use Modules\TitanCore\Services\Engine\EngineRegistry;
+use Modules\TitanCore\Services\Engine\EngineValidator;
 use Modules\TitanCore\Services\TitanCoreAIService;
 use Modules\TitanCore\Support\AssetManifestValidator;
 
@@ -40,6 +47,13 @@ class TitanCorePlatformIntegrationServiceProvider extends ServiceProvider
         $this->app->singleton(AssetDiscoveryService::class, fn () => new AssetDiscoveryService(
             new AssetManifestValidator()
         ));
+        $this->app->singleton(EngineRegistry::class);
+        $this->app->singleton(EngineLifecycle::class);
+        $this->app->singleton(EngineLoader::class);
+        $this->app->singleton(EngineInstaller::class);
+        $this->app->singleton(EngineDiscovery::class);
+        $this->app->singleton(EngineValidator::class, fn () => new EngineValidator(new AssetManifestValidator()));
+        $this->app->singleton(EngineManager::class);
     }
 
     /**
@@ -113,6 +127,11 @@ class TitanCorePlatformIntegrationServiceProvider extends ServiceProvider
         // Register every workflow from workflow.json
         foreach ($discovered['workflows'] as $workflow) {
             $this->registerWorkflow($registry, $workflow);
+        }
+
+        // Register every engine from engine.json
+        foreach ($discovered['engines'] ?? [] as $engine) {
+            $this->registerEngine($registry, $engine);
         }
     }
 
@@ -300,6 +319,37 @@ class TitanCorePlatformIntegrationServiceProvider extends ServiceProvider
             Log::warning('[TitanCore][PlatformIntegration] Failed to register workflow', [
                 'workflow' => $workflow['id'] ?? $workflow['name'] ?? '?',
                 'error'    => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Register a single engine entry from engine.json.
+     *
+     * @param  mixed  $registry
+     * @param  array  $engine
+     */
+    private function registerEngine(mixed $registry, array $engine): void
+    {
+        try {
+            $registry->registerAsset('engine', [
+                'name'     => $engine['name'],
+                'module'   => 'TitanCore',
+                'metadata' => [
+                    'id'           => $engine['id'] ?? null,
+                    'description'  => $engine['description'] ?? '',
+                    'class'        => $engine['class'] ?? null,
+                    'version'      => $engine['version'] ?? null,
+                    'lifecycle'    => $engine['lifecycle'] ?? 'managed',
+                    'capabilities' => $engine['capabilities'] ?? [],
+                    'permissions'  => $engine['permissions'] ?? [],
+                    'tags'         => $engine['tags'] ?? [],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('[TitanCore][PlatformIntegration] Failed to register engine', [
+                'engine' => $engine['id'] ?? $engine['name'] ?? '?',
+                'error'  => $e->getMessage(),
             ]);
         }
     }

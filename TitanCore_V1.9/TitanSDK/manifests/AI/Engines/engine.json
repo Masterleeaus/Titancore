@@ -1,0 +1,53 @@
+{
+  "name": "TitanCoreEngines",
+  "version": "1.9.0",
+  "description": "Engine registry for TitanCore runtime engines.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+  "capabilities": [
+    "engine-framework",
+    "engine-discovery",
+    "engine-lifecycle",
+    "engine-validation",
+    "engine-loading"
+  ],
+  "engines": [
+    {
+      "id": "titancore_model_gateway",
+      "name": "TitanCore Model Gateway Engine",
+      "description": "Default runtime engine routing model execution through TitanCoreModelGateway.",
+      "class": "Modules\\TitanCore\\Services\\TitanCoreModelGateway",
+      "version": "1.9.0",
+      "lifecycle": "managed",
+      "capabilities": [
+        "chat",
+        "embeddings",
+        "provider-failover",
+        "model-routing"
+      ],
+      "permissions": [
+        "ai.chat",
+        "ai.embeddings"
+      ],
+      "tags": [
+        "engine",
+        "gateway",
+        "core"
+      ]
+    }
+  ],
+  "dependencies": [
+    "AI/Providers/provider.json"
+  ],
+  "discovery_metadata": {
+    "asset_type": "engine_registry",
+    "registry_key": "titancore.engines",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": [
+      "engines",
+      "runtime",
+      "core"
+    ]
+  }
+}
