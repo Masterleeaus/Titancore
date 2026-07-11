@@ -213,9 +213,11 @@ class TitanCoreModelGateway
             try {
                 return $this->container->make($class);
             } catch (\Throwable $e) {
+                $code = is_int($e->getCode()) ? $e->getCode() : 0;
+
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
-                    0,
+                    $code,
                     $e,
                 );
             }
@@ -234,9 +236,11 @@ class TitanCoreModelGateway
             try {
                 return $this->container->make(TitanCoreAiProvider::class);
             } catch (\Throwable $e) {
+                $code = is_int($e->getCode()) ? $e->getCode() : 0;
+
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI proxy provider [%s]: %s', TitanCoreAiProvider::class, $e->getMessage()),
-                    0,
+                    $code,
                     $e,
                 );
             }
