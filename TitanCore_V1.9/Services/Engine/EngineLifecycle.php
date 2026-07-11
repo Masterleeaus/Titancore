@@ -44,6 +44,11 @@ class EngineLifecycle
         'stopped',
     ];
 
+    public function states(): array
+    {
+        return self::STATES;
+    }
+
     public function transition(array $engine, string $to): array
     {
         if (! in_array($to, self::STATES, true)) {

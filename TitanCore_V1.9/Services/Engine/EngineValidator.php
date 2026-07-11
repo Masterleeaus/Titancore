@@ -74,6 +74,10 @@ class EngineValidator
 
         $value = $engine[$field];
 
+        if (is_array($value)) {
+            return false;
+        }
+
         return is_string($value) && trim($value) === '';
     }
 }

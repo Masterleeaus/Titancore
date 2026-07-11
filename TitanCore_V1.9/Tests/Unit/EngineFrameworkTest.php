@@ -78,8 +78,10 @@ class EngineFrameworkTest extends TestCase
         $engine = ['id' => 'engine_a', 'status' => 'installed'];
 
         $requiredStates = ['installed', 'registered', 'validated', 'initialized', 'ready', 'active', 'maintenance', 'upgrading', 'disabled', 'failed', 'removed'];
+        $supportedStates = $lifecycle->states();
 
         foreach ($requiredStates as $state) {
+            $this->assertContains($state, $supportedStates);
             $updated = $lifecycle->transition($engine, $state);
             $this->assertSame($state, $updated['status']);
         }
