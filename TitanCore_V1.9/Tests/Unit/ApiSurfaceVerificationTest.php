@@ -83,6 +83,31 @@ class ApiSurfaceVerificationTest extends TestCase
         }
     }
 
+    public function test_provider_failover_endpoint_falls_back_to_legacy_chain_config(): void
+    {
+        $originalConfig = $GLOBALS['__titan_config'] ?? [];
+
+        $GLOBALS['__titan_config'] = [
+            'titan_model_runtime' => [
+                'failover' => [
+                    'enabled' => true,
+                    'chain' => ['openai', 'local'],
+                ],
+            ],
+        ];
+
+        try {
+            $response = (new ProvidersController(new TitanCoreModelGateway()))->failover();
+            $data = $response->getData(true);
+
+            $this->assertSame(['openai', 'local'], $data['chat_providers']);
+            $this->assertSame(['openai', 'local'], $data['embedding_providers']);
+            $this->assertSame(['openai', 'local'], $data['chain']);
+        } finally {
+            $GLOBALS['__titan_config'] = $originalConfig;
+        }
+    }
+
     public function test_manifest_generation_skips_manifest_file_itself(): void
     {
         $tmpDir = sys_get_temp_dir() . '/titancore_manifest_' . uniqid();
