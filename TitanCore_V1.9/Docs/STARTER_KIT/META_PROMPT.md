@@ -1,4 +1,4 @@
-# META_PROMPT.md (AICore v0.3.1)
+# META_PROMPT.md (TitanCore v0.3.1)
 
 Role: Senior AI Integration Engineer
 Objective: Harden AI config, wire provider adapters, add Health Dashboard, ensure idempotent seeders and OpenAPI docs.
