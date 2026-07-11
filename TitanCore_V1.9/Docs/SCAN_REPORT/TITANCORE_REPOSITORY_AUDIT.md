@@ -328,3 +328,57 @@ Discovery-only report. No code was changed. Findings below are supported by repo
 - **Configuration duplication:** `CFG-001`, `CFG-002`
 - **Folder inconsistencies:** `FOL-001`, `FOL-002`
 
+## 16. Final Module Scan Deliverables
+
+### Merge Artifact Report
+- **Covered by:** `NS-001`, `NS-002`, `FOL-001`, `FOL-002`, `DRIFT-001`, `DRIFT-002`, `HIST-001`, `HIST-002`
+- **Scope:** duplicate namespace trees, folder drift, overlapping boot paths, and historical naming artifacts.
+
+### Duplicate Implementation Report
+- **Covered by:** `DUP-001` to `DUP-004`, `PRV-001`, `PRV-002`
+- **Scope:** proxy providers, client wrappers, migration duplication, and disabled OpenAI runtime stubs.
+
+### Namespace Drift Report
+- **Covered by:** `NS-001`, `NS-002`, `NAM-001`
+- **Scope:** split provider trees and parallel AI contract roots.
+
+### Dead Code Report
+- **Covered by:** `DEAD-001` to `DEAD-003`, `ORPH-001`, `ORPH-002`
+- **Scope:** unreferenced adapters and backup artifacts.
+
+### Historical Naming Report
+- **Covered by:** `DRIFT-002`, `NAM-002`, `HIST-001`, `HIST-002`
+- **Scope:** AICore branding, MagicAI/TitanAI naming, and manifest-tracked backup files.
+
+### Runtime Path Report
+- **Covered by:** `RUNTIME-001`, `RUNTIME-002`, `DRIFT-001`
+- **Scope:** provider boot overlap and router/gateway AI execution overlap.
+
+### Registry Report
+- **Covered by:** `REG-001`
+- **Scope:** JSON registry metadata versus service-provider registration overlap.
+
+### Configuration Drift Report
+- **Covered by:** `CFG-001`, `CFG-002`
+- **Scope:** dual AI config roots and stale health snapshot data.
+
+### Compatibility Layer Report
+- **Covered by:** `DEP-001`, `SDK-001`, `DUP-003`, `DEAD-003`
+- **Scope:** legacy OpenAI stubs, split client roots, duplicated compatibility migrations, and backup provider copies.
+
+### Repository Cleanup Inventory
+- **Duplicate implementations:** `DUP-001` to `DUP-004`, `PRV-001`, `PRV-002`
+- **Namespace drift:** `NS-001`, `NS-002`, `NAM-001`
+- **Folder drift:** `FOL-001`, `FOL-002`
+- **Dead code:** `DEAD-001` to `DEAD-003`, `ORPH-001`, `ORPH-002`
+- **Legacy wrappers:** `DEP-001`, `SDK-001`, `DUP-003`
+- **Compatibility layers:** `DEP-001`, `DUP-003`, `DEAD-003`
+- **Historical naming:** `DRIFT-002`, `NAM-002`, `HIST-001`, `HIST-002`
+- **Duplicate providers:** `PRV-001`
+- **Duplicate clients:** `PRV-002`
+- **Duplicate registries:** `REG-001`
+- **Runtime drift:** `RUNTIME-001`, `RUNTIME-002`
+- **Configuration drift:** `CFG-001`, `CFG-002`
+- **Backup files:** `Providers/TitanCoreServiceProvider.php.bak`, `Resources/views/sections/sidebar.blade.php.bak`
+- **Temporary files:** none found in repository filesystem scan for `*.old`, `*.tmp`, `*.disabled`, or `*.backup`
+- **Commented-out code / TODO / FIXME:** no matches found in targeted PHP/JS source search
