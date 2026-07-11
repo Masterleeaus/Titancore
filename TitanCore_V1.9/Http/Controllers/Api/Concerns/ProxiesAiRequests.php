@@ -66,7 +66,7 @@ trait ProxiesAiRequests
     /**
      * Probe the upstream AI service health endpoint.
      */
-    public function ping(Request $request, TitanCoreRouter $router): JsonResponse
+    public function ping(TitanCoreRouter $router): JsonResponse
     {
         $paths = ['/api/health', '/api/status', '/v1/health', '/health'];
 
