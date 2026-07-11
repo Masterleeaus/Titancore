@@ -129,7 +129,10 @@ class MigrateSdkCommand extends Command
             $rel      = str_replace($moduleDir.'/', '', $file);
 
             foreach (self::INTERNAL_NAMESPACES as $internalNs) {
-                if (str_contains($contents, "use {$internalNs}") || str_contains($contents, "new \\{$internalNs}")) {
+                // Match only actual PHP `use` statements (not comments or strings).
+                // Pattern: start of line, optional whitespace, `use`, the namespace.
+                $escaped = preg_quote($internalNs, '/');
+                if (preg_match('/^\s*use\s+'.$escaped.'/m', $contents)) {
                     $issues[] = "{$rel}: imports internal TitanCore namespace '{$internalNs}*'. Use a contract instead.";
                 }
             }

@@ -90,14 +90,16 @@ class MdkGeneratorCommandTest extends TestCase
         $this->artisan('titan:make-module', ['name' => 'RepeatModule'])->run();
 
         $moduleJsonPath = $this->tmpModulesDir.'/RepeatModule/module.json';
-        $originalMtime  = filemtime($moduleJsonPath);
+        $originalContent = file_get_contents($moduleJsonPath);
 
-        // Wait a moment and run again
-        sleep(1);
+        // Corrupt the file so we can detect if it gets regenerated
+        file_put_contents($moduleJsonPath, '{"corrupted":true}');
+
+        // Run again without --force
         $this->artisan('titan:make-module', ['name' => 'RepeatModule'])->run();
 
-        // File should NOT have been overwritten
-        $this->assertSame($originalMtime, filemtime($moduleJsonPath));
+        // File should NOT have been overwritten — corruption still present
+        $this->assertSame('{"corrupted":true}', file_get_contents($moduleJsonPath));
     }
 
     /** @test */

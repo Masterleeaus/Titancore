@@ -30,6 +30,9 @@ class TitanDoctorCommand extends Command
 
     protected $description = 'Diagnose a single Titan module (manifests, namespaces, providers, routes, tests).';
 
+    /** Maximum number of PHP files to sample for namespace validation. */
+    private const MAX_NS_SAMPLE = 100;
+
     private bool $hasErrors   = false;
     private bool $hasWarnings = false;
 
@@ -107,7 +110,7 @@ class TitanDoctorCommand extends Command
         $phpFiles = File::glob($moduleDir.'/**/*.php') ?: [];
 
         $violations = 0;
-        foreach (array_slice($phpFiles, 0, 50) as $file) {
+        foreach (array_slice($phpFiles, 0, self::MAX_NS_SAMPLE) as $file) {
             $contents = file_get_contents($file) ?: '';
             if (preg_match('/^namespace\s+([^;]+)/m', $contents, $m)) {
                 $ns = trim($m[1]);
@@ -143,7 +146,8 @@ class TitanDoctorCommand extends Command
         $hasWeb = is_file($moduleDir.'/Routes/web.php');
 
         if ($hasApi || $hasWeb) {
-            $files = implode(', ', array_filter(['api.php' => $hasApi, 'web.php' => $hasWeb], fn ($v) => $v, ARRAY_FILTER_USE_KEY));
+            $present = array_filter(['api.php' => $hasApi, 'web.php' => $hasWeb]);
+            $files   = implode(', ', array_keys($present));
             $this->pass("Route files found: {$files}.");
         } else {
             $this->warn('No route files found in Routes/ (api.php or web.php). Add routes or ignore if headless.');

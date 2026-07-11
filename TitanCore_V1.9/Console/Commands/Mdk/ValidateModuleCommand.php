@@ -26,6 +26,9 @@ class ValidateModuleCommand extends Command
 
     protected $description = 'Validate a Titan module against platform architecture rules.';
 
+    /** Maximum number of PHP files to sample for namespace validation. */
+    private const MAX_NS_SAMPLE = 100;
+
     public function handle(): int
     {
         $moduleName = (string) $this->argument('module');
@@ -174,7 +177,7 @@ class ValidateModuleCommand extends Command
     ): void {
         $phpFiles = glob($moduleDir.'/**/*.php') ?: [];
 
-        foreach (array_slice($phpFiles, 0, 30) as $file) {
+        foreach (array_slice($phpFiles, 0, self::MAX_NS_SAMPLE) as $file) {
             $contents = file_get_contents($file) ?: '';
             if (preg_match('/^namespace\s+([^;]+)/m', $contents, $m)) {
                 $ns = trim($m[1]);
