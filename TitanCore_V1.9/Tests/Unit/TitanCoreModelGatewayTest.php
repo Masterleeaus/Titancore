@@ -5,7 +5,6 @@ namespace Modules\TitanCore\Tests\Unit;
 use Illuminate\Contracts\Container\Container;
 use Modules\TitanCore\AI\Providers\LocalModelProvider;
 use Modules\TitanCore\AI\Providers\NullChatProvider;
-use Modules\TitanCore\AI\Providers\NullEmbeddingProvider;
 use Modules\TitanCore\Contracts\AI\ChatProviderContract;
 use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
 use Modules\TitanCore\Providers\TitanCoreServiceProvider;
@@ -17,42 +16,32 @@ class TitanCoreModelGatewayTest extends TestCase
 {
     public function test_chat_resolves_providers_through_the_container(): void
     {
-        $container = new class implements Container {
-            public array $resolved = [];
+        $container = $this->makeContainerStub([
+            NullChatProvider::class => new class implements ChatProviderContract {
+                public function chat(array $messages, array $options = []): array
+                {
+                    return [
+                        'ok' => true,
+                        'content' => 'container chat',
+                        'usage' => null,
+                        'model' => 'stub',
+                        'latency_ms' => 1,
+                        'provider' => 'container',
+                        'error' => null,
+                    ];
+                }
 
-            public function make(string $abstract, array $parameters = []): mixed
-            {
-                $this->resolved[] = $abstract;
+                public function health(): array
+                {
+                    return ['ok' => true, 'provider' => 'container', 'reason' => null];
+                }
 
-                return match ($abstract) {
-                    NullChatProvider::class => new class implements ChatProviderContract {
-                        public function chat(array $messages, array $options = []): array
-                        {
-                            return [
-                                'ok' => true,
-                                'content' => 'container chat',
-                                'usage' => null,
-                                'model' => 'stub',
-                                'latency_ms' => 1,
-                                'provider' => 'container',
-                                'error' => null,
-                            ];
-                        }
-
-                        public function health(): array
-                        {
-                            return ['ok' => true, 'provider' => 'container', 'reason' => null];
-                        }
-
-                        public function providerName(): string
-                        {
-                            return 'container';
-                        }
-                    },
-                    default => throw new \RuntimeException("Unexpected resolution: {$abstract}"),
-                };
-            }
-        };
+                public function providerName(): string
+                {
+                    return 'container';
+                }
+            },
+        ]);
 
         $gateway = new TitanCoreModelGateway(null, $container);
         $result = $gateway->chat([['role' => 'user', 'content' => 'hello']], [], ['provider' => 'null']);
@@ -63,55 +52,45 @@ class TitanCoreModelGatewayTest extends TestCase
 
     public function test_embed_resolves_local_provider_through_the_container(): void
     {
-        $container = new class implements Container {
-            public array $resolved = [];
+        $container = $this->makeContainerStub([
+            LocalModelProvider::class => new class implements ChatProviderContract, EmbeddingProviderContract {
+                public function chat(array $messages, array $options = []): array
+                {
+                    return [
+                        'ok' => true,
+                        'content' => 'local chat',
+                        'usage' => null,
+                        'model' => 'stub',
+                        'latency_ms' => 1,
+                        'provider' => 'local',
+                        'error' => null,
+                    ];
+                }
 
-            public function make(string $abstract, array $parameters = []): mixed
-            {
-                $this->resolved[] = $abstract;
+                public function embed(string|array $input, array $options = []): array
+                {
+                    return [
+                        'ok' => true,
+                        'vectors' => [[0.1, 0.2, 0.3]],
+                        'usage' => null,
+                        'model' => 'stub',
+                        'latency_ms' => 1,
+                        'provider' => 'local',
+                        'error' => null,
+                    ];
+                }
 
-                return match ($abstract) {
-                    LocalModelProvider::class => new class implements ChatProviderContract, EmbeddingProviderContract {
-                        public function chat(array $messages, array $options = []): array
-                        {
-                            return [
-                                'ok' => true,
-                                'content' => 'local chat',
-                                'usage' => null,
-                                'model' => 'stub',
-                                'latency_ms' => 1,
-                                'provider' => 'local',
-                                'error' => null,
-                            ];
-                        }
+                public function health(): array
+                {
+                    return ['ok' => true, 'provider' => 'local', 'reason' => null];
+                }
 
-                        public function embed(string|array $input, array $options = []): array
-                        {
-                            return [
-                                'ok' => true,
-                                'vectors' => [[0.1, 0.2, 0.3]],
-                                'usage' => null,
-                                'model' => 'stub',
-                                'latency_ms' => 1,
-                                'provider' => 'local',
-                                'error' => null,
-                            ];
-                        }
-
-                        public function health(): array
-                        {
-                            return ['ok' => true, 'provider' => 'local', 'reason' => null];
-                        }
-
-                        public function providerName(): string
-                        {
-                            return 'local';
-                        }
-                    },
-                    default => throw new \RuntimeException("Unexpected resolution: {$abstract}"),
-                };
-            }
-        };
+                public function providerName(): string
+                {
+                    return 'local';
+                }
+            },
+        ]);
 
         $gateway = new TitanCoreModelGateway(null, $container);
         $result = $gateway->embed('hello', [], ['provider' => 'local']);
@@ -148,5 +127,47 @@ class TitanCoreModelGatewayTest extends TestCase
         } finally {
             $GLOBALS['__titan_config'] = $previousConfig;
         }
+    }
+
+    /**
+     * @param  array<class-string, object>  $providers
+     */
+    private function makeContainerStub(array $providers): Container
+    {
+        return new class($providers) implements Container {
+            public array $resolved = [];
+
+            /**
+             * @param  array<class-string, object>  $providers
+             */
+            public function __construct(private array $providers) {}
+
+            public function make(string $abstract, array $parameters = []): mixed
+            {
+                $this->resolved[] = $abstract;
+
+                if (! array_key_exists($abstract, $this->providers)) {
+                    throw new \RuntimeException("Unexpected resolution: {$abstract}");
+                }
+
+                return $this->providers[$abstract];
+            }
+
+            public function bind(...$args): void {}
+            public function singleton(...$args): void {}
+            public function instance(...$args): void {}
+            public function alias(...$args): void {}
+            public function tagged(...$args): array { return []; }
+            public function tag(...$args): void {}
+            public function has(...$args): bool { return false; }
+            public function bound(...$args): bool { return false; }
+            public function resolved(...$args): bool { return false; }
+            public function makeWith(...$args): mixed { return $this->make(...$args); }
+            public function extend(...$args): void {}
+            public function __call(string $name, array $arguments): mixed
+            {
+                return null;
+            }
+        };
     }
 }
