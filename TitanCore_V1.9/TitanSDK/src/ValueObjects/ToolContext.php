@@ -4,6 +4,10 @@ namespace TitanSDK\ValueObjects;
 
 /**
  * Immutable execution context shared across tool runtime boundaries.
+ *
+ * Not final so the legacy Modules\TitanCore compatibility wrapper can extend it
+ * during the TitanSDK extraction transition. External SDK consumers should treat
+ * this as effectively final and should not subclass it.
  */
 class ToolContext
 {
@@ -85,7 +89,7 @@ class ToolContext
             'user_id'       => $this->userId,
             'company_id'    => $this->companyId,
             'dry_run'       => $this->dryRun,
-            'correlation_id'=> $this->correlationId,
+            'correlation_id' => $this->correlationId,
             'call_stack'    => $this->callStack,
             'meta'          => $this->meta,
         ];

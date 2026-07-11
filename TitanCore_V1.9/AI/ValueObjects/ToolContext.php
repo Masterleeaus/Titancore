@@ -5,6 +5,12 @@ namespace Modules\TitanCore\AI\ValueObjects;
 class ToolContext extends \TitanSDK\ValueObjects\ToolContext
 {
     /**
+     * Re-declared to preserve the legacy Modules\TitanCore return type.
+     *
+     * The extracted TitanSDK parent uses `self` in its factory/builder methods, so
+     * inheriting them directly would return TitanSDK\ValueObjects\ToolContext and
+     * break existing internal type hints that still expect the legacy class.
+     *
      * @param  array<string, mixed>  $context
      */
     public static function fromArray(array $context = []): self

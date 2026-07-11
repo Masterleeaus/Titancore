@@ -2,43 +2,12 @@
 
 namespace TitanSDK\Facades;
 
-use Modules\TitanCore\Services\TitanCoreAIService;
-use Modules\TitanCore\Services\TitanCoreModelGateway;
+use Illuminate\Support\Facades\Facade;
 
-final class TitanAI
+final class TitanAI extends Facade
 {
-    public function __construct(
-        private readonly TitanCoreAIService $service,
-        private readonly TitanCoreModelGateway $gateway,
-    ) {}
-
-    public function generate(
-        string $prompt,
-        array $messages = [],
-        array $tools = [],
-        ?string $provider = null,
-        ?string $model = null,
-    ): string {
-        return $this->service->generate($prompt, $messages, $tools, $provider, $model);
-    }
-
-    public function embed(string $text, string $model): array
+    protected static function getFacadeAccessor(): string
     {
-        return $this->service->embed($text, $model);
-    }
-
-    public function embedBatch(array $texts, string $model): array
-    {
-        return $this->service->embedBatch($texts, $model);
-    }
-
-    public function chat(array $messages, array $context = [], array $options = []): array
-    {
-        return $this->gateway->chat($messages, $context, $options);
-    }
-
-    public function health(?string $provider = null): array
-    {
-        return $this->gateway->health($provider);
+        return 'titansdk.ai';
     }
 }

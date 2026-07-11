@@ -14,7 +14,7 @@ class ToolInputValidationException extends InvalidArgumentException
     public function __construct(string $toolName, public readonly array $errors)
     {
         $summary = implode('; ', array_map(
-            fn($field, $msg) => "{$field}: {$msg}",
+            fn(string $field, string $msg) => "{$field}: {$msg}",
             array_keys($errors),
             array_values($errors),
         ));

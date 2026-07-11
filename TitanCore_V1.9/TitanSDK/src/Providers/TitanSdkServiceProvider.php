@@ -5,7 +5,7 @@ namespace TitanSDK\Providers;
 use Illuminate\Support\ServiceProvider;
 use Modules\TitanCore\Services\TitanCoreAIService;
 use Modules\TitanCore\Services\TitanCoreModelGateway;
-use TitanSDK\Facades\TitanAI;
+use TitanSDK\Services\TitanAIManager;
 
 class TitanSdkServiceProvider extends ServiceProvider
 {
@@ -13,12 +13,14 @@ class TitanSdkServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/titansdk.php', 'titansdk');
 
-        $this->app->singleton(TitanAI::class, function ($app): TitanAI {
-            return new TitanAI(
+        $this->app->singleton('titansdk.ai', function ($app): TitanAIManager {
+            return new TitanAIManager(
                 $app->make(TitanCoreAIService::class),
                 $app->make(TitanCoreModelGateway::class),
             );
         });
+
+        $this->app->alias('titansdk.ai', TitanAIManager::class);
     }
 
     public function boot(): void

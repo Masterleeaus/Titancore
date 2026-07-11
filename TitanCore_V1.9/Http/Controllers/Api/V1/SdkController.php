@@ -14,14 +14,37 @@ use Illuminate\Routing\Controller;
  */
 class SdkController extends Controller
 {
+    // Http/Controllers/Api/V1 sits five levels below the TitanCore module root.
+    private const MODULE_ROOT_DEPTH = 5;
+    private const SDK_DIRECTORY = 'TitanSDK';
+
     private function moduleBasePath(): string
     {
-        return dirname(__DIR__, 5);
+        // This controller lives in Http/Controllers/Api/V1, five levels below the module root.
+        return dirname(__DIR__, self::MODULE_ROOT_DEPTH);
     }
 
     private function sdkBasePath(): string
     {
-        return $this->moduleBasePath() . DIRECTORY_SEPARATOR . 'TitanSDK';
+        return $this->moduleBasePath() . DIRECTORY_SEPARATOR . self::SDK_DIRECTORY;
+    }
+
+    private function manifestPrefix(): string
+    {
+        if (is_dir($this->sdkBasePath() . DIRECTORY_SEPARATOR . 'manifests' . DIRECTORY_SEPARATOR . 'AI')) {
+            return 'TitanSDK/manifests/AI/';
+        }
+
+        return 'AI/';
+    }
+
+    private function moduleManifestPath(): string
+    {
+        if (is_dir($this->sdkBasePath() . DIRECTORY_SEPARATOR . 'manifests' . DIRECTORY_SEPARATOR . 'AI')) {
+            return 'TitanSDK/manifests/module.json';
+        }
+
+        return 'module.json';
     }
 
     private function moduleMeta(): array
@@ -132,16 +155,12 @@ class SdkController extends Controller
      */
     public function manifests(): JsonResponse
     {
-        $prefix = 'AI/';
-
-        if (is_dir($this->sdkBasePath() . DIRECTORY_SEPARATOR . 'manifests' . DIRECTORY_SEPARATOR . 'AI')) {
-            $prefix = 'TitanSDK/manifests/AI/';
-        }
+        $prefix = $this->manifestPrefix();
 
         $schemas = [
             [
                 'type'        => 'module',
-                'file'        => $prefix === 'AI/' ? 'module.json' : 'TitanSDK/manifests/module.json',
+                'file'        => $this->moduleManifestPath(),
                 'description' => 'Module metadata manifest',
             ],
             [

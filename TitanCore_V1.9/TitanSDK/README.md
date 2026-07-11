@@ -10,6 +10,7 @@ TitanCore remains the Platform Kernel implementation; TitanSDK contains only the
 - `src/Exceptions/AI` — extracted public SDK exceptions
 - `src/ValueObjects` — extracted public value objects
 - `src/Facades` — stable SDK facade wrappers
+- `src/Services` — facade backing services that delegate into TitanCore
 - `src/Providers` — SDK service provider
 - `manifests` — canonical public manifest files
 - `config` — SDK bootstrap configuration

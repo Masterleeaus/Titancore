@@ -4,6 +4,10 @@ namespace TitanSDK\ValueObjects;
 
 /**
  * Immutable result envelope returned by every tool execution.
+ *
+ * Not final so the legacy Modules\TitanCore compatibility wrapper can extend it
+ * during the TitanSDK extraction transition. External SDK consumers should treat
+ * this as effectively final and should not subclass it.
  */
 class ToolResult
 {
