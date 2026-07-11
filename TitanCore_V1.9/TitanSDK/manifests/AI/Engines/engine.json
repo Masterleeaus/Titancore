@@ -15,10 +15,13 @@
     {
       "id": "titancore_model_gateway",
       "name": "TitanCore Model Gateway Engine",
+      "type": "runtime",
       "description": "Default runtime engine routing model execution through TitanCoreModelGateway.",
       "class": "Modules\\TitanCore\\Services\\TitanCoreModelGateway",
       "version": "1.9.0",
-      "lifecycle": "managed",
+      "sdk_version": "1.9.0",
+      "author": "TitanCore",
+      "lifecycle": "registered",
       "capabilities": [
         "chat",
         "embeddings",
@@ -28,6 +31,26 @@
       "permissions": [
         "ai.chat",
         "ai.embeddings"
+      ],
+      "dependencies": [],
+      "providers": [
+        "titancore.gateway"
+      ],
+      "widgets": [],
+      "resources": [],
+      "settings": {
+        "default_provider_strategy": "gateway"
+      },
+      "health_checks": [
+        "gateway_connectivity",
+        "provider_resolution",
+        "sdk_compatibility"
+      ],
+      "upgrade_handlers": [
+        "Modules\\TitanCore\\Services\\Engine\\EngineManager::upgrade"
+      ],
+      "install_handlers": [
+        "Modules\\TitanCore\\Services\\Engine\\EngineManager::install"
       ],
       "tags": [
         "engine",

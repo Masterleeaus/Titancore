@@ -9,15 +9,45 @@ class EngineLifecycle
     /**
      * Allowed lifecycle states for runtime engines.
      *
-     * States are intentionally additive and coarse-grained:
-     * - registered: discovered in metadata but not yet installed
-     * - installed: installation completed
-     * - loaded: runtime class resolved and ready
-     * - running: actively serving requests
-     * - stopped: available but not running
-     * - disabled: administratively disabled
+     * Canonical states:
+     * - installed
+     * - registered
+     * - validated
+     * - initialized
+     * - ready
+     * - active
+     * - maintenance
+     * - upgrading
+     * - disabled
+     * - failed
+     * - removed
+     *
+     * Backward-compatible aliases retained:
+     * - loaded (initialized)
+     * - running (active)
+     * - stopped (disabled)
      */
-    private const STATES = ['registered', 'installed', 'loaded', 'running', 'stopped', 'disabled'];
+    private const STATES = [
+        'installed',
+        'registered',
+        'validated',
+        'initialized',
+        'ready',
+        'active',
+        'maintenance',
+        'upgrading',
+        'disabled',
+        'failed',
+        'removed',
+        'loaded',
+        'running',
+        'stopped',
+    ];
+
+    public function states(): array
+    {
+        return self::STATES;
+    }
 
     public function transition(array $engine, string $to): array
     {

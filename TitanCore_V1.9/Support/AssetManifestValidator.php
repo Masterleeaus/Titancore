@@ -69,11 +69,28 @@ class AssetManifestValidator
 
     /**
      * Required subfields on each item within an engine 'engines' array.
-     *
-     * lifecycle is expected to be a non-empty status descriptor
-     * (for example: managed, registered, installed, loaded, running).
      */
-    private const ENGINE_ITEM_REQUIRED = ['id', 'name', 'description', 'class', 'version', 'lifecycle'];
+    private const ENGINE_ITEM_REQUIRED = [
+        'id',
+        'name',
+        'version',
+        'sdk_version',
+        'type',
+        'description',
+        'author',
+        'class',
+        'lifecycle',
+        'dependencies',
+        'permissions',
+        'capabilities',
+        'providers',
+        'widgets',
+        'resources',
+        'settings',
+        'health_checks',
+        'upgrade_handlers',
+        'install_handlers',
+    ];
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -194,7 +211,7 @@ class AssetManifestValidator
             'tool'     => $this->validateItems($data['tools'] ?? [], self::TOOL_ITEM_REQUIRED, 'tools', $label),
             'workflow' => $this->validateItems($data['workflows'] ?? [], self::WORKFLOW_ITEM_REQUIRED, 'workflows', $label),
             'prompt'   => $this->validateItems($data['prompts'] ?? [], self::PROMPT_ITEM_REQUIRED, 'prompts', $label),
-            'engine'   => $this->validateItems($data['engines'] ?? [], self::ENGINE_ITEM_REQUIRED, 'engines', $label),
+            'engine'   => $this->validateEngineItems($data['engines'] ?? [], $label),
             default    => [],
         };
 
@@ -327,6 +344,49 @@ class AssetManifestValidator
                 if (! isset($item[$field]) || $item[$field] === '' || $item[$field] === null) {
                     $errors[] = "Missing required field \"{$field}\" in {$key}[{$index}] of {$label}.";
                 }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validate engine items with strict type checks for canonical fields.
+     *
+     * @param  mixed   $items
+     * @param  string  $label
+     * @return string[]
+     */
+    private function validateEngineItems(mixed $items, string $label): array
+    {
+        $errors = $this->validateItems($items, self::ENGINE_ITEM_REQUIRED, 'engines', $label);
+
+        if (! is_array($items) || empty($items)) {
+            return $errors;
+        }
+
+        $stringFields = ['id', 'name', 'version', 'sdk_version', 'type', 'description', 'author', 'class', 'lifecycle'];
+        $arrayFields = ['dependencies', 'permissions', 'capabilities', 'providers', 'widgets', 'resources', 'health_checks', 'upgrade_handlers', 'install_handlers'];
+
+        foreach ($items as $index => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            foreach ($stringFields as $field) {
+                if (array_key_exists($field, $item) && (! is_string($item[$field]) || trim($item[$field]) === '')) {
+                    $errors[] = "Field \"{$field}\" must be a non-empty string in engines[{$index}] of {$label}.";
+                }
+            }
+
+            foreach ($arrayFields as $field) {
+                if (array_key_exists($field, $item) && ! is_array($item[$field])) {
+                    $errors[] = "Field \"{$field}\" must be an array in engines[{$index}] of {$label}.";
+                }
+            }
+
+            if (array_key_exists('settings', $item) && ! is_array($item['settings'])) {
+                $errors[] = "Field \"settings\" must be an object in engines[{$index}] of {$label}.";
             }
         }
 

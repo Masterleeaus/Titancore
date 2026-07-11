@@ -77,4 +77,43 @@ class EngineManager implements EngineManagerContract
 
         return $engine;
     }
+
+    public function enable(string $engineId): ?array
+    {
+        return $this->lifecycle($engineId, 'active');
+    }
+
+    public function disable(string $engineId): ?array
+    {
+        return $this->lifecycle($engineId, 'disabled');
+    }
+
+    public function upgrade(string $engineId): ?array
+    {
+        $engine = $this->lifecycle($engineId, 'upgrading');
+
+        if ($engine === null) {
+            return null;
+        }
+
+        $engine['upgrade_requested_at'] = gmdate('c');
+        $this->registry->put($engine);
+
+        return $engine;
+    }
+
+    public function rollback(string $engineId): ?array
+    {
+        return $this->lifecycle($engineId, 'maintenance');
+    }
+
+    public function repair(string $engineId): ?array
+    {
+        return $this->lifecycle($engineId, 'ready');
+    }
+
+    public function remove(string $engineId): ?array
+    {
+        return $this->lifecycle($engineId, 'removed');
+    }
 }
