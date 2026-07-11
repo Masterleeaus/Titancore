@@ -21,6 +21,16 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
 {
     /** HTTP status codes that trigger failover to the next provider. */
     protected array $failoverStatuses = [429, 500, 502, 503, 504];
+    protected int $backoffBaseDelayMs = 0;
+    protected int $backoffMaxDelayMs = 0;
+    protected int $circuitBreakerFailureThreshold = 0;
+    protected int $circuitBreakerCooldownSeconds = 60;
+    /** @var callable(int):void|null */
+    protected $sleeper = null;
+    /** @var callable():float|null */
+    protected $clock = null;
+    protected static array $providerFailureCounts = [];
+    protected static array $providerCooldownUntil = [];
 
     /**
      * @param  ChatProviderContract[]|EmbeddingProviderContract[]  $providers
@@ -38,14 +48,27 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
     {
         $lastResult = ['ok' => false, 'content' => null, 'error' => 'No chat providers configured in failover chain'];
 
-        foreach ($this->providers as $provider) {
+        foreach ($this->providers as $index => $provider) {
             if (!$provider instanceof ChatProviderContract) {
+                continue;
+            }
+
+            $providerName = $provider->providerName();
+            if ($this->isProviderCircuitOpen($providerName)) {
+                $lastResult = $this->buildCircuitOpenChatResult($providerName);
+
+                Log::warning('[TitanCore][ProviderFailoverChain] Chat provider temporarily skipped', [
+                    'provider' => $providerName,
+                    'reason'   => 'circuit_open',
+                ]);
+
                 continue;
             }
 
             $result = $provider->chat($messages, $options);
 
             if ($result['ok'] ?? false) {
+                $this->resetProviderFailureState($providerName);
                 return $result;
             }
 
@@ -53,13 +76,21 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             $shouldFailover = !isset($status) || in_array((int) $status, $this->failoverStatuses, true);
 
             Log::warning('[TitanCore][ProviderFailoverChain] Chat provider failed', [
-                'provider'   => $provider->providerName(),
+                'provider'   => $providerName,
                 'status'     => $status,
                 'error'      => $result['error'] ?? null,
                 'failover'   => $shouldFailover,
             ]);
 
             $lastResult = $result;
+
+            if ($shouldFailover) {
+                $failureCount = $this->recordProviderFailure($providerName);
+                $this->applyBackoffDelay($failureCount, $this->hasNextProvider($index, ChatProviderContract::class));
+                continue;
+            }
+
+            $this->resetProviderFailureState($providerName);
 
             if (!$shouldFailover) {
                 // Non-retryable error (e.g. 400 bad request) — stop chain.
@@ -80,14 +111,27 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
     {
         $lastResult = ['ok' => false, 'vectors' => null, 'error' => 'No embedding providers configured in failover chain'];
 
-        foreach ($this->providers as $provider) {
+        foreach ($this->providers as $index => $provider) {
             if (!$provider instanceof EmbeddingProviderContract) {
+                continue;
+            }
+
+            $providerName = $provider->providerName();
+            if ($this->isProviderCircuitOpen($providerName)) {
+                $lastResult = $this->buildCircuitOpenEmbeddingResult($providerName);
+
+                Log::warning('[TitanCore][ProviderFailoverChain] Embed provider temporarily skipped', [
+                    'provider' => $providerName,
+                    'reason'   => 'circuit_open',
+                ]);
+
                 continue;
             }
 
             $result = $provider->embed($input, $options);
 
             if ($result['ok'] ?? false) {
+                $this->resetProviderFailureState($providerName);
                 return $result;
             }
 
@@ -95,7 +139,7 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             $shouldFailover = !isset($status) || in_array((int) $status, $this->failoverStatuses, true);
 
             Log::warning('[TitanCore][ProviderFailoverChain] Embed provider failed', [
-                'provider'   => $provider->providerName(),
+                'provider'   => $providerName,
                 'status'     => $status,
                 'error'      => $result['error'] ?? null,
                 'failover'   => $shouldFailover,
@@ -103,9 +147,14 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
 
             $lastResult = $result;
 
-            if (!$shouldFailover) {
-                break;
+            if ($shouldFailover) {
+                $failureCount = $this->recordProviderFailure($providerName);
+                $this->applyBackoffDelay($failureCount, $this->hasNextProvider($index, EmbeddingProviderContract::class));
+                continue;
             }
+
+            $this->resetProviderFailureState($providerName);
+            break;
         }
 
         return $lastResult;
@@ -147,6 +196,52 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
     }
 
     /**
+     * Configure exponential backoff before trying the next provider.
+     */
+    public function setBackoff(int $baseDelayMs, int $maxDelayMs = 0): static
+    {
+        $this->backoffBaseDelayMs = max(0, $baseDelayMs);
+        $this->backoffMaxDelayMs = max(0, $maxDelayMs);
+
+        return $this;
+    }
+
+    /**
+     * Configure an in-process circuit breaker for retryable provider failures.
+     */
+    public function setCircuitBreaker(int $failureThreshold, int $cooldownSeconds): static
+    {
+        $this->circuitBreakerFailureThreshold = max(0, $failureThreshold);
+        $this->circuitBreakerCooldownSeconds = max(0, $cooldownSeconds);
+
+        return $this;
+    }
+
+    /**
+     * Override the sleep handler for deterministic tests.
+     *
+     * @param  callable(int):void|null  $sleeper
+     */
+    public function setSleeper(?callable $sleeper): static
+    {
+        $this->sleeper = $sleeper;
+
+        return $this;
+    }
+
+    /**
+     * Override the clock source for deterministic tests.
+     *
+     * @param  callable():float|null  $clock
+     */
+    public function setClock(?callable $clock): static
+    {
+        $this->clock = $clock;
+
+        return $this;
+    }
+
+    /**
      * Return the first provider in the chain, or null if empty.
      */
     protected function primaryProvider(): ChatProviderContract|EmbeddingProviderContract|null
@@ -157,5 +252,111 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             }
         }
         return null;
+    }
+
+    protected function recordProviderFailure(string $providerName): int
+    {
+        $failures = (self::$providerFailureCounts[$providerName] ?? 0) + 1;
+        self::$providerFailureCounts[$providerName] = $failures;
+
+        if (
+            $this->circuitBreakerFailureThreshold > 0
+            && $this->circuitBreakerCooldownSeconds > 0
+            && $failures >= $this->circuitBreakerFailureThreshold
+        ) {
+            self::$providerCooldownUntil[$providerName] = $this->now() + $this->circuitBreakerCooldownSeconds;
+        }
+
+        return $failures;
+    }
+
+    protected function resetProviderFailureState(string $providerName): void
+    {
+        unset(self::$providerFailureCounts[$providerName], self::$providerCooldownUntil[$providerName]);
+    }
+
+    protected function isProviderCircuitOpen(string $providerName): bool
+    {
+        $cooldownUntil = self::$providerCooldownUntil[$providerName] ?? null;
+
+        if ($cooldownUntil === null) {
+            return false;
+        }
+
+        if ($cooldownUntil <= $this->now()) {
+            $this->resetProviderFailureState($providerName);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function applyBackoffDelay(int $failureCount, bool $hasFallbackProvider): void
+    {
+        if ($this->backoffBaseDelayMs <= 0 || !$hasFallbackProvider) {
+            return;
+        }
+
+        $delayMs = $this->backoffBaseDelayMs * (2 ** max(0, $failureCount - 1));
+
+        if ($this->backoffMaxDelayMs > 0) {
+            $delayMs = min($delayMs, $this->backoffMaxDelayMs);
+        }
+
+        $sleep = $this->sleeper ?? static fn (int $microseconds): bool => usleep($microseconds);
+        $sleep((int) $delayMs * 1000);
+    }
+
+    /**
+     * @param  class-string  $contract
+     */
+    protected function hasNextProvider(int $currentIndex, string $contract): bool
+    {
+        $providerCount = count($this->providers);
+
+        for ($i = $currentIndex + 1; $i < $providerCount; $i++) {
+            if ($this->providers[$i] instanceof $contract) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function now(): float
+    {
+        $clock = $this->clock ?? static fn (): float => microtime(true);
+
+        return (float) $clock();
+    }
+
+    protected function buildCircuitOpenChatResult(string $providerName): array
+    {
+        return [
+            'ok'           => false,
+            'content'      => null,
+            'usage'        => null,
+            'model'        => null,
+            'latency_ms'   => 0,
+            'provider'     => $providerName,
+            'error'        => 'Provider temporarily unavailable due to circuit breaker',
+            'status'       => 503,
+            'circuit_open' => true,
+        ];
+    }
+
+    protected function buildCircuitOpenEmbeddingResult(string $providerName): array
+    {
+        return [
+            'ok'           => false,
+            'vectors'      => null,
+            'usage'        => null,
+            'model'        => null,
+            'latency_ms'   => 0,
+            'provider'     => $providerName,
+            'error'        => 'Provider temporarily unavailable due to circuit breaker',
+            'status'       => 503,
+            'circuit_open' => true,
+        ];
     }
 }
