@@ -38,6 +38,9 @@ class AssetManifestValidator
     /** Supported schema_version values */
     public const SUPPORTED_SCHEMA_VERSIONS = ['1.0.0'];
 
+    /** Supported manifest_version values */
+    public const SUPPORTED_MANIFEST_VERSIONS = ['1.0.0'];
+
     /**
      * Required fields for each manifest type's top-level object.
      * An empty array means "no extra requirements beyond name+version+description".
@@ -121,15 +124,17 @@ class AssetManifestValidator
         $errors   = [];
         $warnings = [];
 
-        // 1. Schema version check (if declared)
-        if (isset($data['schema_version'])) {
-            $sv = (string) $data['schema_version'];
-            if (! in_array($sv, self::SUPPORTED_SCHEMA_VERSIONS, true)) {
+        // 1. Schema / manifest version check (if declared)
+        $manifestVersion = $data['manifest_version'] ?? $data['schema_version'] ?? null;
+        if (is_string($manifestVersion) && $manifestVersion !== '') {
+            $supportedVersions = array_values(array_unique(array_merge(self::SUPPORTED_SCHEMA_VERSIONS, self::SUPPORTED_MANIFEST_VERSIONS)));
+
+            if (! in_array($manifestVersion, $supportedVersions, true)) {
                 $errors[] = sprintf(
-                    'Unknown schema_version "%s" in %s. Supported: [%s].',
-                    $sv,
+                    'Unknown manifest_version "%s" in %s. Supported: [%s].',
+                    $manifestVersion,
                     $label,
-                    implode(', ', self::SUPPORTED_SCHEMA_VERSIONS)
+                    implode(', ', $supportedVersions)
                 );
             }
         }

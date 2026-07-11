@@ -217,6 +217,29 @@ class AssetManifestValidationTest extends TestCase
         $this->assertTrue($result->isValid(), implode('; ', $result->allMessages()));
     }
 
+    public function test_manifest_version_alias_is_accepted(): void
+    {
+        $data = $this->validAsset();
+        unset($data['schema_version']);
+        $data['manifest_version'] = '1.0.0';
+
+        $result = $this->validator->validateData($data, 'asset', 'asset.json');
+
+        $this->assertTrue($result->isValid(), implode('; ', $result->allMessages()));
+    }
+
+    public function test_unknown_manifest_version_produces_failure(): void
+    {
+        $data = $this->validAsset();
+        unset($data['schema_version']);
+        $data['manifest_version'] = '2.0.0';
+
+        $result = $this->validator->validateData($data, 'asset', 'asset.json');
+
+        $this->assertFalse($result->isValid());
+        $this->assertStringContainsString('manifest_version', implode(' ', $result->errors()));
+    }
+
     // ── Tests: required field enforcement ────────────────────────────────────
 
     /** @dataProvider requiredFieldsProvider */

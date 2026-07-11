@@ -2,12 +2,14 @@
 
 namespace Modules\TitanCore\AI;
 
+use Modules\TitanCore\AI\ValueObjects\ToolContext;
 use Modules\TitanCore\AI\ValueObjects\ToolResult;
 use Modules\TitanCore\Contracts\AI\ToolExecutorContract;
 use Modules\TitanCore\Exceptions\AI\ToolHandlerNotFoundException;
 use Modules\TitanCore\Exceptions\AI\ToolInputValidationException;
 use Modules\TitanCore\Exceptions\AI\ToolNotAllowedException;
 use Modules\TitanCore\Exceptions\AI\ToolPermissionDeniedException;
+use Modules\TitanCore\Exceptions\AI\ToolRecursionDetectedException;
 use Modules\TitanCore\Exceptions\AI\ToolTimedOutException;
 
 /**
@@ -48,6 +50,11 @@ use Modules\TitanCore\Exceptions\AI\ToolTimedOutException;
  */
 class ToolExecutor implements ToolExecutorContract
 {
+    private const MAX_RECURSION_DEPTH = 8;
+
+    /** @var array<int, string> */
+    private array $executionStack = [];
+
     /**
      * @param  array<string, array>        $manifest           Tool definitions keyed by tool name.
      * @param  string|array<int, string>   $allowedTools       '*' permits all registered tools;
@@ -71,99 +78,110 @@ class ToolExecutor implements ToolExecutorContract
     public function execute(string $toolName, array $params, array $context = []): ToolResult
     {
         $startTime = microtime(true);
-        $userId    = $context['user_id']    ?? null;
-        $companyId = $context['company_id'] ?? null;
-        $dryRun    = (bool) ($context['dry_run'] ?? false);
+        $toolContext = ToolContext::fromArray($context);
 
-        // ── 1. Allowlist check ────────────────────────────────────────────────
-        if (!$this->isToolAllowed($toolName)) {
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'blocked', 0, 'Tool not in allowlist');
-            throw new ToolNotAllowedException($toolName);
+        if ($this->wouldExceedRecursionLimit($toolName, $toolContext)) {
+            $this->writeAudit($toolName, $toolContext, $params, 'blocked', 0, 'Recursive tool execution detected');
+            throw new ToolRecursionDetectedException($toolName, count($this->executionStack) + 1);
         }
 
-        // ── 2. Manifest / handler resolution ─────────────────────────────────
-        $definition   = $this->manifest[$toolName] ?? null;
-        $handlerClass = $definition['handler'] ?? null;
-
-        if ($handlerClass === null || !class_exists($handlerClass)) {
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'failed', 0, 'Handler not found');
-            throw new ToolHandlerNotFoundException($toolName, $handlerClass ?? '(not declared)');
-        }
-
-        // ── 3. Permission gate ────────────────────────────────────────────────
-        if ($this->permissionChecker !== null) {
-            $permitted = (bool) ($this->permissionChecker)($toolName, $context);
-            if (!$permitted) {
-                $this->writeAudit($toolName, $userId, $companyId, $params, 'blocked', 0, 'Permission denied');
-                throw new ToolPermissionDeniedException($toolName);
-            }
-        }
-
-        // ── 4. Input validation ───────────────────────────────────────────────
-        $schema = $definition['input_schema'] ?? [];
-        $this->validateInput($toolName, $params, $schema);
-
-        // ── 5. Dry-run short-circuit ──────────────────────────────────────────
-        if ($dryRun) {
-            $duration = $this->elapsedMs($startTime);
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'dry_run', $duration);
-            return new ToolResult(
-                ok: true,
-                tool: $toolName,
-                data: ['dry_run' => true, 'params' => $params],
-                message: 'dry-run: no side-effects applied',
-            );
-        }
-
-        // ── 6. Timeout-guarded execution ──────────────────────────────────────
-        $timeoutMs = $this->timeoutMs();
-        $alarmSet  = $this->armAlarm();
+        $this->executionStack[] = $toolName;
 
         try {
-            $handler = new $handlerClass();
-            $raw     = $handler($params);
-
-            $duration = $this->elapsedMs($startTime);
-
-            // Dispatch any pending signals (makes pcntl flag visible on cooperative runtimes).
-            if ($alarmSet && function_exists('pcntl_signal_dispatch')) {
-                pcntl_signal_dispatch();
+            // ── 1. Allowlist check ────────────────────────────────────────────
+            if (!$this->isToolAllowed($toolName)) {
+                $this->writeAudit($toolName, $toolContext, $params, 'blocked', 0, 'Tool not in allowlist');
+                throw new ToolNotAllowedException($toolName);
             }
 
-            // Soft timeout check — catches cases where pcntl is unavailable or the
-            // handler completed just as the alarm fired.
-            if ($duration > $timeoutMs) {
-                $this->writeAudit($toolName, $userId, $companyId, $params, 'timed_out', $duration);
-                throw new ToolTimedOutException($toolName, $this->timeoutSeconds);
+            // ── 2. Manifest / handler resolution ─────────────────────────────
+            $definition   = $this->manifest[$toolName] ?? null;
+            $handlerClass = $definition['handler'] ?? null;
+
+            if ($handlerClass === null || !class_exists($handlerClass)) {
+                $this->writeAudit($toolName, $toolContext, $params, 'failed', 0, 'Handler not found');
+                throw new ToolHandlerNotFoundException($toolName, $handlerClass ?? '(not declared)');
             }
 
-            if ($alarmSet) {
-                pcntl_alarm(0); // cancel outstanding alarm on success
+            // ── 3. Permission gate ────────────────────────────────────────────
+            if ($this->permissionChecker !== null) {
+                $permitted = (bool) ($this->permissionChecker)($toolName, $context);
+                if (!$permitted) {
+                    $this->writeAudit($toolName, $toolContext, $params, 'blocked', 0, 'Permission denied');
+                    throw new ToolPermissionDeniedException($toolName);
+                }
             }
 
-            // ── 7. Audit ──────────────────────────────────────────────────────
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'success', $duration);
+            // ── 4. Input validation ──────────────────────────────────────────
+            $schema = $definition['input_schema'] ?? [];
+            $this->validateInput($toolName, $params, $schema);
 
-            return new ToolResult(
-                ok: true,
-                tool: $toolName,
-                data: is_array($raw) ? $raw : ['result' => $raw],
-                message: 'ok',
-            );
-        } catch (ToolTimedOutException $e) {
-            if ($alarmSet) {
-                pcntl_alarm(0);
+            // ── 5. Dry-run short-circuit ─────────────────────────────────────
+            if ($toolContext->dryRun) {
+                $duration = $this->elapsedMs($startTime);
+                $this->writeAudit($toolName, $toolContext, $params, 'dry_run', $duration);
+                return new ToolResult(
+                    ok: true,
+                    tool: $toolName,
+                    data: ['dry_run' => true, 'params' => $params],
+                    message: 'dry-run: no side-effects applied',
+                    auditRef: $toolContext->correlationId,
+                );
             }
-            $duration = $this->elapsedMs($startTime);
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'timed_out', $duration, $e->getMessage());
-            throw $e;
-        } catch (\Throwable $e) {
-            if ($alarmSet) {
-                pcntl_alarm(0);
+
+            // ── 6. Timeout-guarded execution ─────────────────────────────────
+            $timeoutMs = $this->timeoutMs();
+            $alarmSet  = $this->armAlarm();
+
+            try {
+                $handler = new $handlerClass();
+                $raw     = $handler($params);
+
+                $duration = $this->elapsedMs($startTime);
+
+                // Dispatch any pending signals (makes pcntl flag visible on cooperative runtimes).
+                if ($alarmSet && function_exists('pcntl_signal_dispatch')) {
+                    pcntl_signal_dispatch();
+                }
+
+                // Soft timeout check — catches cases where pcntl is unavailable or the
+                // handler completed just as the alarm fired.
+                if ($duration > $timeoutMs) {
+                    $this->writeAudit($toolName, $toolContext, $params, 'timed_out', $duration);
+                    throw new ToolTimedOutException($toolName, $this->timeoutSeconds);
+                }
+
+                if ($alarmSet) {
+                    pcntl_alarm(0); // cancel outstanding alarm on success
+                }
+
+                // ── 7. Audit ──────────────────────────────────────────────────
+                $this->writeAudit($toolName, $toolContext, $params, 'success', $duration);
+
+                return new ToolResult(
+                    ok: true,
+                    tool: $toolName,
+                    data: is_array($raw) ? $raw : ['result' => $raw],
+                    message: 'ok',
+                    auditRef: $toolContext->correlationId,
+                );
+            } catch (ToolTimedOutException $e) {
+                if ($alarmSet) {
+                    pcntl_alarm(0);
+                }
+                $duration = $this->elapsedMs($startTime);
+                $this->writeAudit($toolName, $toolContext, $params, 'timed_out', $duration, $e->getMessage());
+                throw $e;
+            } catch (\Throwable $e) {
+                if ($alarmSet) {
+                    pcntl_alarm(0);
+                }
+                $duration = $this->elapsedMs($startTime);
+                $this->writeAudit($toolName, $toolContext, $params, 'failed', $duration, $e->getMessage());
+                throw $e;
             }
-            $duration = $this->elapsedMs($startTime);
-            $this->writeAudit($toolName, $userId, $companyId, $params, 'failed', $duration, $e->getMessage());
-            throw $e;
+        } finally {
+            array_pop($this->executionStack);
         }
     }
 
@@ -182,6 +200,22 @@ class ToolExecutor implements ToolExecutorContract
         }
 
         return in_array($toolName, (array) $this->allowedTools, true);
+    }
+
+    private function wouldExceedRecursionLimit(string $toolName, ToolContext $context): bool
+    {
+        $currentDepth = count($this->executionStack);
+        $effectiveDepth = $currentDepth + $context->depth() + 1;
+
+        if ($effectiveDepth > self::MAX_RECURSION_DEPTH) {
+            return true;
+        }
+
+        if (in_array($toolName, $this->executionStack, true)) {
+            return true;
+        }
+
+        return $context->hasTool($toolName);
     }
 
     /**
@@ -234,8 +268,7 @@ class ToolExecutor implements ToolExecutorContract
      */
     private function writeAudit(
         string  $toolName,
-        mixed   $userId,
-        mixed   $companyId,
+        ToolContext $context,
         array   $params,
         string  $status,
         int     $durationMs,
@@ -246,13 +279,17 @@ class ToolExecutor implements ToolExecutorContract
         }
 
         ($this->auditWriter)([
-            'tool'        => $toolName,
-            'user_id'     => $userId,
-            'company_id'  => $companyId,
-            'input_hash'  => hash('sha256', (string) json_encode($params)),
-            'status'      => $status,
-            'duration_ms' => $durationMs,
-            'error'       => $error,
+            'tool'           => $toolName,
+            'user_id'        => $context->userId,
+            'company_id'     => $context->companyId,
+            'correlation_id' => $context->correlationId,
+            'input_hash'     => hash('sha256', (string) json_encode($params)),
+            'status'         => $status,
+            'duration_ms'    => $durationMs,
+            'error'          => $error,
+            'timestamp'      => gmdate('c'),
+            'version'        => '1.0.0',
+            'depth'          => $context->depth(),
         ]);
     }
 

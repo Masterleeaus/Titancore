@@ -35,6 +35,7 @@ class ChatApiController extends Controller {
         'model'    => $options['model'] ?? null,
         'response' => $resp,
         'latency_ms' => (int) ((microtime(true) - $started) * 1000),
+        'occurred_at' => now()->toIso8601String(),
       ];
       DB::table('ai_usage_ledger')->updateOrInsert(
         ['correlation_id'=>$corr],
@@ -51,7 +52,7 @@ class ChatApiController extends Controller {
           'created_at'=>now(),
         ]
       );
-      event(new AiRequestCompleted($corr, $status, $meta['latency_ms'], $tokensIn, $tokensOut, (float)$cost));
+      event(new AiRequestCompleted($corr, $status, $meta['latency_ms'], $tokensIn, $tokensOut, (float)$cost, $meta['occurred_at'] ?? null));
     }
     return response()->json($resp);
   }
