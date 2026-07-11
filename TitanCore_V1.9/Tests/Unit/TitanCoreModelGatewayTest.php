@@ -118,7 +118,7 @@ class TitanCoreModelGatewayTest extends TestCase
         ];
 
         try {
-            $provider = new TitanCoreServiceProvider();
+            $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
             $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
             $method->setAccessible(true);
             $method->invoke($provider);

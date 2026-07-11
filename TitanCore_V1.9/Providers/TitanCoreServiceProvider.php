@@ -103,6 +103,8 @@ class TitanCoreServiceProvider extends ServiceProvider
         // App-level Titan config files (config/ directory)
         $this->mergeConfigFrom(config_path('titan-modules.php'), 'titan-modules');
         $this->mergeConfigFrom(config_path('titan-ai.php'), 'titan-ai');
+        // The file name stays hyphenated, but the runtime config key is underscored
+        // to match the existing config('titan_model_runtime.*') consumers.
         $this->mergeConfigFrom(config_path('titan-model-runtime.php'), 'titan_model_runtime');
 
         // Module-level config overrides
