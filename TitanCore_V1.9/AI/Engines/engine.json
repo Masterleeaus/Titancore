@@ -47,10 +47,10 @@
         "sdk_compatibility"
       ],
       "upgrade_handlers": [
-        "Modules\\TitanCore\\Services\\Engine\\EngineLifecycle::transition"
+        "Modules\\TitanCore\\Services\\Engine\\EngineManager::upgrade"
       ],
       "install_handlers": [
-        "Modules\\TitanCore\\Services\\Engine\\EngineInstaller::install"
+        "Modules\\TitanCore\\Services\\Engine\\EngineManager::install"
       ],
       "tags": [
         "engine",

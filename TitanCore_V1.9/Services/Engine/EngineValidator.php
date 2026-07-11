@@ -26,7 +26,7 @@ class EngineValidator
     {
         $errors = [];
 
-        foreach ([
+        $requiredFields = [
             'id',
             'name',
             'version',
@@ -46,8 +46,10 @@ class EngineValidator
             'health_checks',
             'upgrade_handlers',
             'install_handlers',
-        ] as $field) {
-            if (! isset($engine[$field]) || $engine[$field] === '') {
+        ];
+
+        foreach ($requiredFields as $field) {
+            if ($this->isMissingRequiredField($engine, $field)) {
                 $errors[] = sprintf('Missing required field "%s".', $field);
             }
         }
@@ -62,5 +64,16 @@ class EngineValidator
             'valid'  => $valid,
             'errors' => $errors,
         ];
+    }
+
+    private function isMissingRequiredField(array $engine, string $field): bool
+    {
+        if (! array_key_exists($field, $engine) || $engine[$field] === null) {
+            return true;
+        }
+
+        $value = $engine[$field];
+
+        return is_string($value) && trim($value) === '';
     }
 }

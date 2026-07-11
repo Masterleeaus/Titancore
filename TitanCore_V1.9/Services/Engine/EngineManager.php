@@ -96,7 +96,10 @@ class EngineManager implements EngineManagerContract
             return null;
         }
 
-        return $this->lifecycle($engineId, 'active');
+        $engine['upgrade_requested_at'] = gmdate('c');
+        $this->registry->put($engine);
+
+        return $engine;
     }
 
     public function rollback(string $engineId): ?array
