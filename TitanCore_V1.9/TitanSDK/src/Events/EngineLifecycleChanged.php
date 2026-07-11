@@ -7,6 +7,7 @@ class EngineLifecycleChanged
     public readonly string $engineId;
     public readonly string $from;
     public readonly string $to;
+    public readonly ?string $correlationId;
     public readonly string $occurredAt;
     public readonly string $eventVersion;
 
@@ -16,10 +17,12 @@ class EngineLifecycleChanged
         string $to,
         ?string $occurredAt = null,
         string $eventVersion = '1.0.0',
+        ?string $correlationId = null,
     ) {
         $this->engineId = $engineId;
         $this->from = $from;
         $this->to = $to;
+        $this->correlationId = $correlationId;
         $this->occurredAt = $occurredAt ?? gmdate('c');
         $this->eventVersion = $eventVersion;
     }
