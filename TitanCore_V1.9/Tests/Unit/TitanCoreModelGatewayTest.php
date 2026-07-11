@@ -101,7 +101,7 @@ class TitanCoreModelGatewayTest extends TestCase
         $this->assertSame([LocalModelProvider::class], $resolved);
     }
 
-    public function test_validate_titan_config_uses_underscored_runtime_key(): void
+    public function testValidateTitanConfigDoesNotThrowWithUnderscoredRuntimeKey(): void
     {
         $originalConfig = $GLOBALS['__titan_config'] ?? [];
 
@@ -120,10 +120,15 @@ class TitanCoreModelGatewayTest extends TestCase
         ];
 
         try {
+            $this->assertSame(
+                ['openai' => ['api_key' => 'test']],
+                config('titan_model_runtime.providers'),
+            );
+            $this->assertNull(config('titan-model-runtime.providers'));
+
             $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
             $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
             $method->setAccessible(true);
-            $this->expectNotToPerformAssertions();
             $method->invoke($provider);
         } finally {
             $GLOBALS['__titan_config'] = $originalConfig;

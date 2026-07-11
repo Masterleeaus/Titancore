@@ -169,7 +169,7 @@ class TitanCoreModelGateway
             } catch (\Throwable $e) {
                 throw new \RuntimeException(
                     sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
-                    (int) $e->getCode(),
+                    is_int($e->getCode()) ? $e->getCode() : 0,
                     $e,
                 );
             }
