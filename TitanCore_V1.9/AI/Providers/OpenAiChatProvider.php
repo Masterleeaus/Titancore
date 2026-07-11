@@ -13,7 +13,7 @@ use Modules\TitanCore\Contracts\AI\ChatProviderContract;
 class OpenAiChatProvider implements ChatProviderContract
 {
     protected string $provider = 'openai';
-    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled in TitanCore Pass 1. Route chat requests through TitanZero.';
+    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled. Route chat requests through the TitanZero gateway.';
 
     public function __construct(
         protected string $apiKey = '',

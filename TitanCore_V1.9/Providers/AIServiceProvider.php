@@ -1,12 +1,30 @@
 <?php
+
 namespace Modules\TitanCore\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * AIServiceProvider
+ *
+ * @deprecated All responsibilities of this provider have been absorbed into
+ *             TitanCoreServiceProvider (config merges, ai.policy middleware alias).
+ *             This class is retained solely for backwards compatibility with host
+ *             applications that still auto-load it explicitly via config/app.php.
+ *             It will be removed in a future cleanup pass once all consumers are
+ *             confirmed to have migrated.
+ *
+ * Boot-time registration of routes, migrations, views, and console commands is
+ * handled exclusively by TitanCoreServiceProvider to prevent duplicate loading.
+ */
 class AIServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
+        // These merges are now also performed in TitanCoreServiceProvider::register()
+        // and are therefore always available. Retained here in case a host application
+        // explicitly registers this provider — repeated mergeConfigFrom calls are safe
+        // because Laravel's implementation only fills in missing keys.
         $this->mergeConfigFrom(__DIR__.'/../Config/ai.php', 'titancore');
         $this->mergeConfigFrom(__DIR__.'/../Config/tools.php', 'titancore.tools');
         $this->mergeConfigFrom(__DIR__.'/../Config/permissions.php', 'titancore.permissions');
@@ -14,27 +32,9 @@ class AIServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../Config/metrics.php', 'titancore.metrics');
     }
 
-    public function boot()
+    public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../Routes/web.php');
-        $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
-        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
-        $this->loadViewsFrom(__DIR__.'/../Resources/views', 'titancore');
-
-        // alias tenant model policy middleware if available
-        if ($this->app->bound('router')) {
-            $this->app['router']->aliasMiddleware('ai.policy', \Modules\TitanCore\Http\Middleware\CheckAiPolicy::class);
-        }
-
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                \Modules\TitanCore\Console\AiSmokeCommand::class,
-                \Modules\TitanCore\Console\UninstallCommand::class,
-            ]);
-            $this->publishes([
-                __DIR__.'/../Resources/views/components/create-with-ai.blade.php' =>
-                    resource_path('views/vendor/titancore/components/create-with-ai.blade.php'),
-            ], 'titancore-ui');
-        }
+        // Route, migration, view, and command registration is handled
+        // exclusively by TitanCoreServiceProvider to prevent duplicate loading.
     }
 }

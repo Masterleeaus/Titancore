@@ -8,7 +8,7 @@ use Modules\TitanCore\Services\UsageLogger;
 
 class AnthropicClient implements ClientInterface
 {
-    protected const DISABLED_REASON = 'Direct Anthropic calls are disabled in TitanCore Pass 1. Use the TitanZero gateway.';
+    protected const DISABLED_REASON = 'Direct Anthropic calls are disabled. All AI requests must route through the TitanZero gateway.';
     protected const ANTHROPIC_VERSION = '2023-06-01';
 
     protected string $apiKey;

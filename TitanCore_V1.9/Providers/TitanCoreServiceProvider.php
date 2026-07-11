@@ -48,6 +48,8 @@ class TitanCoreServiceProvider extends ServiceProvider
         // Super Admin lock middleware
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('titancore.superadmin', SuperAdmin::class);
+        // AI policy middleware — previously registered only in AIServiceProvider
+        $router->aliasMiddleware('ai.policy', \Modules\TitanCore\Http\Middleware\CheckAiPolicy::class);
 
         // Web routes
         $web = __DIR__.'/../Routes/web.php';
@@ -112,6 +114,21 @@ class TitanCoreServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../Config/config.php', 'titancore');
         $this->mergeConfigFrom(__DIR__.'/../Config/titan_agents.php', 'titan_agents');
         $this->mergeConfigFrom(__DIR__.'/../Config/titan-model-runtime.php', 'titan_model_runtime');
+
+        // AI sub-configs — previously merged only when AIServiceProvider was loaded.
+        // Consolidated here so they are always available regardless of whether
+        // AIServiceProvider is registered by the host application.
+        //
+        // ai.php is merged into 'titancore' (not 'titancore.ai') to preserve
+        // backward-compatibility with consumers that reference keys such as
+        // config('titancore.providers.openai.api_key') or config('titancore.default').
+        // Laravel's mergeConfigFrom only fills missing keys, so this cannot overwrite
+        // values set by config.php which is merged into the same 'titancore' namespace.
+        $this->mergeConfigFrom(__DIR__.'/../Config/ai.php', 'titancore');
+        $this->mergeConfigFrom(__DIR__.'/../Config/tools.php', 'titancore.tools');
+        $this->mergeConfigFrom(__DIR__.'/../Config/permissions.php', 'titancore.permissions');
+        $this->mergeConfigFrom(__DIR__.'/../Config/policies.php', 'titancore.policies');
+        $this->mergeConfigFrom(__DIR__.'/../Config/metrics.php', 'titancore.metrics');
 
         // Bind Titan AI client/provider/router (lazy + safe)
         $this->app->singleton(TitanAiClient::class);
