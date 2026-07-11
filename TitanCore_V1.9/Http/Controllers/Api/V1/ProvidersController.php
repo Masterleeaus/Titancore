@@ -204,7 +204,7 @@ class ProvidersController extends Controller
             'enabled'             => $enabled,
             'chat_providers'      => $chatProviders,
             'embedding_providers' => $embeddingProviders,
-            // Deprecated compatibility alias for older clients expecting a single chain.
+            // Deprecated compatibility alias for older clients; migrate to chat_providers before the next breaking API version.
             'chain'               => $chatProviders,
             'ts'                  => now()->toIso8601String(),
         ]);

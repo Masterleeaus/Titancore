@@ -15,8 +15,8 @@ class ApiSurfaceVerificationTest extends TestCase
         $routes = file_get_contents(__DIR__ . '/../../Routes/api.php');
 
         $this->assertIsString($routes);
-        $this->assertStringContainsString(
-            "Route::get('/health', PlatformHealthController::class)->name('health');",
+        $this->assertRegExp(
+            "/Route::get\\('\\/health',\\s*PlatformHealthController::class\\)->name\\('health'\\);/",
             $routes,
         );
     }
@@ -85,7 +85,7 @@ class ApiSurfaceVerificationTest extends TestCase
 
     public function test_manifest_generation_skips_manifest_file_itself(): void
     {
-        $tmpDir = sys_get_temp_dir() . '/titancore_manifest_' . uniqid('', true);
+        $tmpDir = sys_get_temp_dir() . '/titancore_manifest_' . uniqid();
         mkdir($tmpDir, 0755, true);
         file_put_contents($tmpDir . '/MANIFEST.sha256', 'stale');
         file_put_contents($tmpDir . '/keep.txt', 'keep');
