@@ -88,7 +88,12 @@ class TitanCoreModelGateway
     }
 
     /**
-     * Route TitanCore tool/proxy requests through the canonical TitanCore AI provider.
+     * Route TitanCore proxy requests through the canonical TitanCore AI provider.
+     *
+     * @param  array  $request  Proxy request payload containing method/path/payload/headers or tool/input values.
+     * @param  array  $config   Provider runtime config such as allowed path prefixes and upstream credentials.
+     * @param  array  $context  Telemetry context such as provider, company_id, user_id, and feature name.
+     * @return array{ok: bool, status?: int, headers?: array, body?: mixed, provider?: string, latency_ms?: int}
      */
     public function invokeProxyRequest(array $request, array $config = [], array $context = []): array
     {

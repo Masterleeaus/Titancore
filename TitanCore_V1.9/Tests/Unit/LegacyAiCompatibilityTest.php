@@ -335,6 +335,7 @@ namespace Modules\TitanCore\Tests\Unit {
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
     use Modules\TitanCore\Services\MagicAiClient;
+    use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
     use Modules\TitanCore\Services\TitanCoreModelGateway;
     use Modules\TitanCore\Services\TitanCoreRouter;
     use Modules\TitanCore\Services\TitanAiClient;
@@ -428,6 +429,51 @@ namespace Modules\TitanCore\Tests\Unit {
             $this->assertSame('proxy', $gateway->calls[0]['context']['feature']);
         }
 
+        public function test_gateway_logs_proxy_usage_when_forwarding_requests(): void
+        {
+            $this->loadGatewayAndRouterClasses();
+            $this->loadProviderClass();
+
+            $provider = new class extends TitanCoreAiProvider {
+                public function __construct() {}
+
+                public function invoke(array $request, array $config): array
+                {
+                    return [
+                        'ok' => true,
+                        'status' => 200,
+                        'body' => ['proxied' => true],
+                        'provider' => 'titanai',
+                    ];
+                }
+            };
+
+            $gateway = new class($provider) extends TitanCoreModelGateway {
+                public array $usageCalls = [];
+
+                public function __construct(TitanCoreAiProvider $toolProvider)
+                {
+                    $this->toolProvider = $toolProvider;
+                }
+
+                protected function logUsage(string $feature, array $result, array $context): void
+                {
+                    $this->usageCalls[] = compact('feature', 'result', 'context');
+                }
+            };
+
+            $result = $gateway->invokeProxyRequest(
+                ['method' => 'GET', 'path' => '/v1/health'],
+                ['allowed_path_prefixes' => ['/v1']],
+                ['provider' => 'titanai', 'feature' => 'proxy'],
+            );
+
+            $this->assertTrue($result['ok']);
+            $this->assertCount(1, $gateway->usageCalls);
+            $this->assertSame('proxy', $gateway->usageCalls[0]['feature']);
+            $this->assertSame('titanai', $gateway->usageCalls[0]['result']['provider']);
+        }
+
         public function test_api_and_web_routes_expose_magicai_compatibility_aliases(): void
         {
             $this->loadRouteFiles();
@@ -473,6 +519,11 @@ namespace Modules\TitanCore\Tests\Unit {
         {
             require_once __DIR__ . '/../../Services/TitanCoreModelGateway.php';
             require_once __DIR__ . '/../../Services/TitanCoreRouter.php';
+        }
+
+        private function loadProviderClass(): void
+        {
+            require_once __DIR__ . '/../../Services/Providers/TitanCoreAiProvider.php';
         }
 
         private function loadRouteFiles(): void

@@ -130,7 +130,7 @@ class TitanCoreRouter
     }
 
     /**
-     * Get Titan AI API key with tenant resolution + fallback.
+     * Get the configured provider API key using Titan AI tenant resolution + fallback rules.
      */
     protected function resolveProviderKey(string $configFallbackKey = ''): string
     {
