@@ -16,8 +16,19 @@ class {{ Name }}Provider
     ) {}
 
     /**
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
+     * Execute a chat completion request through this provider.
+     *
+     * @param  array{
+     *     model?: string,
+     *     messages?: list<array{role:string,content:string}>,
+     *     temperature?: float|int,
+     *     max_tokens?: int
+     * }  $payload
+     * @return array{
+     *     content: string,
+     *     model: string,
+     *     usage: array{prompt_tokens:int,completion_tokens:int,total_tokens:int}
+     * }
      */
     public function chat(array $payload): array
     {

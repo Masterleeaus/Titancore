@@ -42,6 +42,13 @@ class ValidateModuleCommand extends Command
 
         if (! is_dir($moduleDir)) {
             $this->components->error("Module directory not found: {$moduleDir}");
+            $available = $this->discoverModules($modulesBase);
+
+            if ($available !== []) {
+                $this->newLine();
+                $this->line('Available modules:');
+                $this->line('  '.implode(', ', $available));
+            }
 
             return self::FAILURE;
         }
@@ -49,11 +56,17 @@ class ValidateModuleCommand extends Command
         $errors   = [];
         $warnings = [];
 
-        // ── Manifest validation ────────────────────────────────────────────────
-        $this->validateModuleJson($moduleDir, $moduleName, $errors, $warnings);
-        $this->validateManifestFiles($moduleDir, $errors, $warnings);
-        $this->validateNamespace($moduleDir, $moduleName, $warnings);
-        $this->validateDependencies($moduleDir, $warnings);
+        $checks = [
+            fn () => $this->validateModuleJson($moduleDir, $moduleName, $errors, $warnings),
+            fn () => $this->validateManifestFiles($moduleDir, $errors, $warnings),
+            fn () => $this->validateNamespace($moduleDir, $moduleName, $warnings),
+            fn () => $this->validateDependencies($moduleDir, $warnings),
+        ];
+
+        $this->withProgressBar($checks, function (callable $check): void {
+            $check();
+        });
+        $this->newLine(2);
 
         // ── Output results ─────────────────────────────────────────────────────
         foreach ($errors as $error) {
@@ -67,6 +80,9 @@ class ValidateModuleCommand extends Command
         $errorCount   = count($errors);
         $warningCount = count($warnings);
 
+        $this->components->twoColumnDetail('Errors', (string) $errorCount);
+        $this->components->twoColumnDetail('Warnings', (string) $warningCount);
+        $this->components->twoColumnDetail('Strict mode', $strict ? 'enabled' : 'disabled');
         $this->newLine();
 
         if ($errorCount > 0) {
@@ -229,5 +245,27 @@ class ValidateModuleCommand extends Command
         return str_starts_with($configured, DIRECTORY_SEPARATOR)
             ? $configured
             : base_path($configured);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function discoverModules(string $modulesBase): array
+    {
+        if (! is_dir($modulesBase)) {
+            return [];
+        }
+
+        $modules = [];
+
+        foreach (glob($modulesBase.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            if (is_file($dir.'/module.json')) {
+                $modules[] = basename($dir);
+            }
+        }
+
+        sort($modules);
+
+        return array_slice($modules, 0, 12);
     }
 }

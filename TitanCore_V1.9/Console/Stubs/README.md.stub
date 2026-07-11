@@ -28,6 +28,22 @@ php artisan modules:health {{ ModuleName }}
 php artisan modules:deps {{ ModuleName }}
 ```
 
+## Examples
+
+```bash
+# Example Engine (workflow orchestration service)
+php artisan titan:make-workflow ExampleEngine --module={{ ModuleName }}
+
+# Example Provider, Tool and Workflow
+php artisan titan:make-provider ExampleProvider --module={{ ModuleName }}
+php artisan titan:make-tool ExampleTool --module={{ ModuleName }}
+php artisan titan:make-workflow ExampleWorkflow --module={{ ModuleName }}
+
+# Example Studio panel/widget
+php artisan titan:make-panel ExampleStudio --module={{ ModuleName }}
+php artisan titan:make-widget ExampleStudio --module={{ ModuleName }}
+```
+
 ## Tests
 
 ```bash
