@@ -90,7 +90,7 @@ class TitanCoreModelGateway
     /**
      * Route TitanCore tool/proxy requests through the canonical TitanCore AI provider.
      */
-    public function invokeTool(array $request, array $config = [], array $context = []): array
+    public function invokeProxyRequest(array $request, array $config = [], array $context = []): array
     {
         $startedAt = microtime(true);
         $provider = $this->resolveTitanCoreAiProvider();
@@ -99,7 +99,7 @@ class TitanCoreModelGateway
         $result['provider'] ??= 'titanai';
         $result['latency_ms'] ??= (int) round((microtime(true) - $startedAt) * 1000);
 
-        $this->logUsage('tool', $result, $context);
+        $this->logUsage('proxy', $result, $context);
 
         return $result;
     }

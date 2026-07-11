@@ -394,7 +394,7 @@ namespace Modules\TitanCore\Tests\Unit {
 
                 public function __construct() {}
 
-                public function invokeTool(array $request, array $config = [], array $context = []): array
+                public function invokeProxyRequest(array $request, array $config = [], array $context = []): array
                 {
                     $this->calls[] = compact('request', 'config', 'context');
 
