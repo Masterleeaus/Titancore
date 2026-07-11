@@ -1,14 +1,78 @@
 openapi: 3.0.3
 info:
-  title: TitanCore API
-  version: 0.3.0
+  title: TitanCore Platform Kernel API
+  version: 1.9.0
+  description: |
+    TitanCore is the Platform Kernel of the Titan ecosystem.
+    All endpoints require authentication and super-admin privilege.
+    Legacy routes remain available under /api/titancore/ for backwards compatibility.
 servers:
   - url: /api
+    description: TitanCore API base
+
+tags:
+  - name: Platform
+    description: Platform identity, status and operational information
+  - name: Modules
+    description: Module registry and lifecycle management
+  - name: Discovery
+    description: Metadata-driven asset discovery
+  - name: Providers
+    description: AI provider management
+  - name: Knowledge
+    description: Knowledge base — collections, documents, chunks, embeddings
+  - name: Tools
+    description: Tool runtime — discovery, validation, execution
+  - name: Workflows
+    description: Workflow orchestration
+  - name: Agents
+    description: Agent runtime
+  - name: Telemetry
+    description: Operational metrics and traces
+  - name: Diagnostics
+    description: System diagnostics
+  - name: SDK
+    description: SDK metadata for external module integration
+  - name: Health (legacy)
+    description: Legacy health and status endpoints
+  - name: Prompts (legacy)
+    description: Legacy prompt management endpoints
+  - name: Metrics (legacy)
+    description: Legacy usage metrics endpoints
+
 paths:
-  /titancore/status:
+
+  # ── Phase 1: Platform API ────────────────────────────────────────────────────
+
+  /v1/platform/info:
     get:
-      summary: Provider status
-      tags: [Health]
+      summary: Platform identity information
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Platform info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  platform:     { type: string, example: TitanCore }
+                  version:      { type: string, example: "1.9.0" }
+                  name:         { type: string }
+                  alias:        { type: string }
+                  description:  { type: string }
+                  capabilities: { type: array, items: { type: string } }
+                  environment:  { type: string }
+                  php:          { type: string }
+                  laravel:      { type: string }
+                  ts:           { type: string, format: date-time }
+
+  /v1/platform/status:
+    get:
+      summary: Lightweight platform liveness status
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
           description: OK
@@ -17,18 +81,917 @@ paths:
               schema:
                 type: object
                 properties:
-                  ok: { type: boolean }
+                  status:   { type: string, enum: [ok] }
+                  platform: { type: string }
+                  ts:       { type: string, format: date-time }
+
+  /v1/platform/health:
+    get:
+      summary: Comprehensive platform health check
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Health check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [ok, warning, critical] }
+                  checks: { type: object }
+                  ts:     { type: string, format: date-time }
+
+  /v1/platform/version:
+    get:
+      summary: Platform version details
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:        { type: string }
+                  module_version: { type: string }
+                  php:            { type: string }
+                  laravel:        { type: string }
+                  ts:             { type: string, format: date-time }
+
+  /v1/platform/config:
+    get:
+      summary: Sanitised platform configuration (no secrets)
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Platform configuration
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/platform/features:
+    get:
+      summary: Platform capabilities and features
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Feature list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  features: { type: array, items: { type: string } }
+                  count:    { type: integer }
+                  ts:       { type: string, format: date-time }
+
+  /v1/platform/cache:
+    get:
+      summary: Cache health and driver information
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Cache status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:  { type: string, enum: [ok, warning, critical] }
+                  driver:  { type: string }
+                  message: { type: string }
+                  ts:      { type: string, format: date-time }
+
+  /v1/platform/telemetry:
+    get:
+      summary: Platform-level operational telemetry
+      tags: [Platform]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Telemetry summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  telemetry: { type: object }
+                  ts:        { type: string, format: date-time }
+
+  # ── Phase 2: Module & Registry API ──────────────────────────────────────────
+
+  /v1/modules:
+    get:
+      summary: List all registered modules
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Module list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:  { type: array, items: { type: object } }
+                  total: { type: integer }
+                  ts:    { type: string, format: date-time }
+
+  /v1/modules/{id}:
+    get:
+      summary: Get module details by alias/id
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Module details }
+        '404': { description: Module not found }
+
+  /v1/modules/discover:
+    get:
+      summary: Discover modules from filesystem
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Discovered modules }
+
+  /v1/modules/refresh:
+    post:
+      summary: Refresh module registry cache
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Refresh triggered }
+
+  /v1/modules/enable:
+    post:
+      summary: Enable a module
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [module]
+              properties:
+                module: { type: string }
+      responses:
+        '200': { description: Module enabled }
+        '422': { description: Validation error }
+
+  /v1/modules/disable:
+    post:
+      summary: Disable a module
+      tags: [Modules]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [module]
+              properties:
+                module: { type: string }
+      responses:
+        '200': { description: Module disabled }
+
+  # ── Phase 3: Discovery API ───────────────────────────────────────────────────
+
+  /v1/discovery/assets:
+    get:
+      summary: Discover all platform assets from manifests
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: All assets }
+
+  /v1/discovery/providers:
+    get:
+      summary: Discover all registered AI providers
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Provider list }
+
+  /v1/discovery/tools:
+    get:
+      summary: Discover all registered tools
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Tool list }
+
+  /v1/discovery/workflows:
+    get:
+      summary: Discover all registered workflows
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Workflow list }
+
+  /v1/discovery/prompts:
+    get:
+      summary: Discover all registered prompts
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Prompt list }
+
+  /v1/discovery/agents:
+    get:
+      summary: Discover all registered agents
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Agent list }
+
+  /v1/discovery/manifests:
+    get:
+      summary: Return all discovered manifests with capability index
+      tags: [Discovery]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: All manifests and capabilities }
+
+  # ── Phase 4: Provider API ────────────────────────────────────────────────────
+
+  /v1/providers:
+    get:
+      summary: List all configured AI providers
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Provider list }
+
+  /v1/providers/models:
+    get:
+      summary: List available models per provider
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Model list }
+
+  /v1/providers/health:
+    get:
+      summary: Provider configuration health checks
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Provider health }
+
+  /v1/providers/test:
+    post:
+      summary: Send a test completion through the gateway
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider: { type: string }
+      responses:
+        '200': { description: Test successful }
+        '502': { description: Provider error }
+
+  /v1/providers/failover:
+    get:
+      summary: Return failover chain configuration
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Failover config }
+
+  /v1/providers/benchmark:
+    post:
+      summary: Run latency benchmark across providers
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider: { type: string }
+      responses:
+        '200': { description: Benchmark results }
+
+  /v1/providers/{provider}:
+    get:
+      summary: Get details for a specific provider
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Provider details }
+        '404': { description: Provider not found }
+
+  # ── Phase 5: Knowledge API ───────────────────────────────────────────────────
+
+  /v1/knowledge/collections:
+    get:
+      summary: List knowledge collections
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: per_page, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Collections }
+
+  /v1/knowledge/documents:
+    get:
+      summary: List documents (optionally filtered by collection)
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: collection, schema: { type: string } }
+        - { in: query, name: per_page, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Documents }
+
+  /v1/knowledge/chunks:
+    get:
+      summary: List chunks for a document
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: document_id, required: true, schema: { type: integer } }
+        - { in: query, name: per_page, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Chunks (embedding vectors excluded) }
+        '422': { description: document_id required }
+
+  /v1/knowledge/embeddings:
+    get:
+      summary: Embedding health summary by collection
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Embedding statistics }
+
+  /v1/knowledge/search:
+    get:
+      summary: Semantic/hybrid search over a knowledge collection
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: collection, required: true, schema: { type: string } }
+        - { in: query, name: q, required: true, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, default: 8 } }
+      responses:
+        '200': { description: Search results }
+        '422': { description: collection and q required }
+
+  /v1/knowledge/retrieve:
+    post:
+      summary: Retrieve context passages for a query
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, query]
+              properties:
+                collection: { type: string }
+                query:      { type: string }
+                limit:      { type: integer, default: 6 }
+      responses:
+        '200': { description: Retrieved passages }
+        '422': { description: Validation error }
+
+  /v1/knowledge/citations:
+    get:
+      summary: Retrieve citation metadata for chunk IDs
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: chunk_ids, schema: { type: array, items: { type: integer } } }
+      responses:
+        '200': { description: Citation data }
+        '422': { description: chunk_ids required }
+
+  /v1/knowledge/import:
+    post:
+      summary: Import a document into the knowledge base
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, content]
+              properties:
+                collection: { type: string }
+                title:      { type: string }
+                content:    { type: string }
+                embed:      { type: boolean, default: true }
+      responses:
+        '201': { description: Document imported }
+        '422': { description: Validation error }
+
+  /v1/knowledge/export:
+    get:
+      summary: Export all chunks for a collection as JSON
+      tags: [Knowledge]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: collection, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Collection export }
+        '404': { description: Collection not found }
+        '422': { description: collection required }
+
+  # ── Phase 6: Tool Runtime API ────────────────────────────────────────────────
+
+  /v1/tools:
+    get:
+      summary: List tools from manifests
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Tool list }
+
+  /v1/tools/discover:
+    get:
+      summary: Re-run tool manifest discovery
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Discovered tools }
+
+  /v1/tools/validate:
+    post:
+      summary: Validate a tool invocation payload
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tool]
+              properties:
+                tool:  { type: string }
+                input: { type: object }
+      responses:
+        '200': { description: Validation result }
+        '422': { description: Invalid payload }
+
+  /v1/tools/execute:
+    post:
+      summary: Execute a tool through the router
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tool]
+              properties:
+                tool:  { type: string }
+                input: { type: object }
+                meta:  { type: object }
+      responses:
+        '200': { description: Execution result }
+        '422': { description: Validation error }
+
+  /v1/tools/history:
+    get:
+      summary: Recent tool execution history
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Execution history }
+
+  /v1/tools/telemetry:
+    get:
+      summary: Tool usage telemetry aggregates
+      tags: [Tools]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Tool telemetry }
+
+  # ── Phase 7: Workflow API ────────────────────────────────────────────────────
+
+  /v1/workflows:
+    get:
+      summary: List workflows from manifests
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Workflow list }
+
+  /v1/workflows/run:
+    post:
+      summary: Start a workflow run
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workflow]
+              properties:
+                workflow: { type: string }
+                input:    { type: object }
+                context:  { type: object }
+      responses:
+        '202': { description: Workflow queued }
+        '422': { description: Validation error }
+
+  /v1/workflows/status:
+    get:
+      summary: Get workflow run status
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: run_id, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Run status }
+        '404': { description: Run not found }
+        '422': { description: run_id required }
+
+  /v1/workflows/pause:
+    post:
+      summary: Pause a running workflow
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_id]
+              properties:
+                run_id: { type: integer }
+      responses:
+        '200': { description: Workflow paused }
+
+  /v1/workflows/resume:
+    post:
+      summary: Resume a paused workflow
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_id]
+              properties:
+                run_id: { type: integer }
+      responses:
+        '200': { description: Workflow resumed }
+
+  /v1/workflows/cancel:
+    post:
+      summary: Cancel a workflow run
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_id]
+              properties:
+                run_id: { type: integer }
+      responses:
+        '200': { description: Workflow cancelled }
+
+  /v1/workflows/replay:
+    post:
+      summary: Replay a completed or failed workflow run
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_id]
+              properties:
+                run_id: { type: integer }
+      responses:
+        '202': { description: Replay queued }
+        '404': { description: Original run not found }
+
+  /v1/workflows/history:
+    get:
+      summary: Recent workflow run history
+      tags: [Workflows]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Workflow history }
+
+  # ── Phase 8: Agent API ───────────────────────────────────────────────────────
+
+  /v1/agents:
+    get:
+      summary: List agents from manifests
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Agent list }
+
+  /v1/agents/run:
+    post:
+      summary: Start an agent run
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent]
+              properties:
+                agent:   { type: string }
+                input:   { type: object }
+                context: { type: object }
+      responses:
+        '202': { description: Agent queued }
+        '422': { description: Validation error }
+
+  /v1/agents/status:
+    get:
+      summary: Get agent run status
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: run_id, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Run status }
+        '404': { description: Run not found }
+
+  /v1/agents/history:
+    get:
+      summary: Recent agent run history
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Agent history }
+
+  /v1/agents/goals:
+    get:
+      summary: Goals for an agent run
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: run_id, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Agent goals }
+
+  /v1/agents/plans:
+    get:
+      summary: Execution plan for an agent run
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: run_id, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Agent plans }
+
+  /v1/agents/results:
+    get:
+      summary: Results for an agent run
+      tags: [Agents]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: run_id, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Agent results }
+
+  # ── Phase 9: Telemetry API ───────────────────────────────────────────────────
+
+  /v1/telemetry:
+    get:
+      summary: Platform telemetry summary
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Telemetry summary }
+
+  /v1/telemetry/traces:
+    get:
+      summary: Recent execution traces
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Execution traces }
+
+  /v1/telemetry/metrics:
+    get:
+      summary: Time-series usage metrics
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: start, schema: { type: string, format: date } }
+        - { in: query, name: end,   schema: { type: string, format: date } }
+      responses:
+        '200': { description: Metrics }
+
+  /v1/telemetry/costs:
+    get:
+      summary: Cost breakdown by model/provider
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 100 } }
+      responses:
+        '200': { description: Cost data }
+
+  /v1/telemetry/errors:
+    get:
+      summary: Recent error traces
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
+      responses:
+        '200': { description: Error traces }
+
+  /v1/telemetry/providers:
+    get:
+      summary: Per-provider telemetry aggregates
+      tags: [Telemetry]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Provider telemetry }
+
+  # ── Phase 10: Diagnostics API ────────────────────────────────────────────────
+
+  /v1/diagnostics:
+    get:
+      summary: Overall diagnostics summary
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Diagnostics summary }
+
+  /v1/diagnostics/system:
+    get:
+      summary: System-level diagnostics (DB, cache, queue, storage)
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: System diagnostics }
+
+  /v1/diagnostics/providers:
+    get:
+      summary: Provider configuration diagnostics
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Provider diagnostics }
+
+  /v1/diagnostics/modules:
+    get:
+      summary: Module registration diagnostics
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Module diagnostics }
+
+  /v1/diagnostics/knowledge:
+    get:
+      summary: Knowledge base health diagnostics
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Knowledge diagnostics }
+
+  /v1/diagnostics/runtime:
+    get:
+      summary: Runtime diagnostics (AI run log stats)
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Runtime diagnostics }
+
+  /v1/diagnostics/storage:
+    get:
+      summary: Storage layer diagnostics
+      tags: [Diagnostics]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Storage diagnostics }
+
+  # ── Phase 11: SDK Metadata API ───────────────────────────────────────────────
+
+  /v1/sdk/contracts:
+    get:
+      summary: List public contract interfaces
+      tags: [SDK]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Contract list }
+
+  /v1/sdk/events:
+    get:
+      summary: List public domain events
+      tags: [SDK]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Event list }
+
+  /v1/sdk/manifests:
+    get:
+      summary: List manifest schema types supported by TitanCore
+      tags: [SDK]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Manifest schemas }
+
+  /v1/sdk/version:
+    get:
+      summary: SDK/platform version information
+      tags: [SDK]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: SDK version }
+
+  /v1/sdk/capabilities:
+    get:
+      summary: Capabilities exposed through the public SDK
+      tags: [SDK]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: SDK capabilities }
+
+  # ── Legacy Endpoints (backwards compatible) ──────────────────────────────────
+
+  /titancore/status:
+    get:
+      summary: Provider status (legacy)
+      tags: [Health (legacy)]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:       { type: boolean }
                   provider: { type: string }
-                  ts: { type: string, format: date-time }
+                  ts:       { type: string, format: date-time }
+
   /titancore/prompts:
     get:
-      summary: List prompts (RBAC: titancore.view)
-      tags: [Prompts]
+      summary: List prompts (legacy, RBAC: titancore.view)
+      tags: [Prompts (legacy)]
+      security: [{ bearerAuth: [] }]
       responses:
         '200': { description: OK }
     post:
-      summary: Create prompt (RBAC: titancore.manage)
-      tags: [Prompts]
+      summary: Create prompt (legacy, RBAC: titancore.manage)
+      tags: [Prompts (legacy)]
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -37,27 +1000,25 @@ paths:
               type: object
               properties:
                 namespace: { type: string }
-                slug: { type: string }
-                content: { type: string }
+                slug:      { type: string }
+                content:   { type: string }
       responses:
         '201': { description: Created }
-  /titancore/tools:
-    get:
-      summary: List tools
-      tags: [Tools]
-      responses:
-        '200': { description: OK }
+
   /titancore/usage:
     get:
-      summary: Usage metrics (RBAC: titancore.manage)
-      tags: [Metrics]
+      summary: Usage metrics (legacy)
+      tags: [Metrics (legacy)]
+      security: [{ bearerAuth: [] }]
       responses:
         '200': { description: OK }
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
 security:
   - bearerAuth: []
