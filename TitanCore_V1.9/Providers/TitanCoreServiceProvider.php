@@ -46,6 +46,7 @@ use Modules\TitanCore\Services\Providers\TitanAiProvider;
 use Modules\TitanCore\Services\TitanAiClient;
 use Modules\TitanCore\Services\TitanCoreModelGateway;
 use Modules\TitanCore\Services\TitanCoreRouter;
+use Modules\TitanCore\Support\Filament\PlatformAdministrationFramework;
 use Modules\TitanCore\Support\ModuleDependencyGraph;
 
 class TitanCoreServiceProvider extends ServiceProvider
@@ -187,6 +188,11 @@ class TitanCoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             VectorStoreContract::class,
             fn ($app) => VectorStoreFactory::make($app),
+        );
+
+        $this->app->singleton(
+            PlatformAdministrationFramework::class,
+            fn () => new PlatformAdministrationFramework((array) config('titancore.filament', [])),
         );
     }
 
