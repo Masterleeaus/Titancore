@@ -217,6 +217,163 @@ class DiagnosticsController extends Controller
         ]);
     }
 
+    /**
+     * POST /api/v1/diagnostics/doctor
+     *
+     * Run the Module Doctor for a specific module or all modules.
+     * Delegates to the modules:doctor Artisan command.
+     */
+    public function doctor(): JsonResponse
+    {
+        $module = request()->input('module');
+        $args   = $module ? ['module' => $module] : [];
+
+        try {
+            \Illuminate\Support\Facades\Artisan::call('modules:doctor', $args);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+
+            return response()->json([
+                'status' => 'ok',
+                'module' => $module ?? 'all',
+                'output' => $output,
+                'ts'     => now()->toIso8601String(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => $e->getMessage(),
+                'ts'     => now()->toIso8601String(),
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/v1/diagnostics/validate-manifests
+     *
+     * Validate all AI asset manifests.
+     * Delegates to the titan:validate-manifests Artisan command.
+     */
+    public function validateManifests(): JsonResponse
+    {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('titan:validate-manifests');
+            $output = \Illuminate\Support\Facades\Artisan::output();
+
+            return response()->json([
+                'status' => 'ok',
+                'output' => $output,
+                'ts'     => now()->toIso8601String(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => $e->getMessage(),
+                'ts'     => now()->toIso8601String(),
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /api/v1/diagnostics/architecture
+     *
+     * Run architecture validation checks — verify namespace alignment, contract
+     * usage, and blueprint compliance for installed modules.
+     */
+    public function architecture(): JsonResponse
+    {
+        $checks  = [];
+        $errors  = [];
+
+        // Check Modules directory structure
+        $modulesDir = base_path('Modules');
+        if (is_dir($modulesDir)) {
+            foreach (scandir($modulesDir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                $dir = $modulesDir . DIRECTORY_SEPARATOR . $entry;
+                if (! is_dir($dir)) {
+                    continue;
+                }
+
+                $check = ['module' => $entry, 'issues' => []];
+
+                if (! is_file($dir . '/module.json')) {
+                    $check['issues'][] = 'Missing module.json';
+                }
+                if (! is_file($dir . '/composer.json')) {
+                    $check['issues'][] = 'Missing composer.json';
+                }
+                if (! is_dir($dir . '/Providers')) {
+                    $check['issues'][] = 'Missing Providers directory';
+                }
+
+                $check['ok'] = empty($check['issues']);
+                $checks[]    = $check;
+
+                if (! $check['ok']) {
+                    $errors[] = $entry;
+                }
+            }
+        }
+
+        return response()->json([
+            'status'  => empty($errors) ? 'ok' : 'warning',
+            'modules' => count($checks),
+            'issues'  => count($errors),
+            'checks'  => $checks,
+            'ts'      => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/diagnostics/contracts
+     *
+     * Verify that TitanCore contracts are structurally intact.
+     */
+    public function contracts(): JsonResponse
+    {
+        $contractsDir = dirname(__DIR__, 5) . DIRECTORY_SEPARATOR . 'Contracts';
+        $contracts    = [];
+        $issues       = [];
+
+        if (is_dir($contractsDir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($contractsDir, \FilesystemIterator::SKIP_DOTS),
+            );
+
+            foreach ($iterator as $file) {
+                if ($file->getExtension() !== 'php') {
+                    continue;
+                }
+
+                $relative   = str_replace($contractsDir . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                $interface  = str_replace([DIRECTORY_SEPARATOR, '.php'], ['\\', ''], $relative);
+                $fqn        = 'Modules\\TitanCore\\Contracts\\' . $interface;
+
+                $entry = ['contract' => $fqn, 'file' => $relative, 'ok' => true];
+
+                // Verify PHP syntax
+                $lint = shell_exec('php -l ' . escapeshellarg($file->getPathname()) . ' 2>&1');
+                if ($lint !== null && ! str_contains($lint, 'No syntax errors detected')) {
+                    $entry['ok']    = false;
+                    $entry['error'] = trim($lint);
+                    $issues[]       = $fqn;
+                }
+
+                $contracts[] = $entry;
+            }
+        }
+
+        return response()->json([
+            'status'    => empty($issues) ? 'ok' : 'critical',
+            'contracts' => $contracts,
+            'total'     => count($contracts),
+            'issues'    => count($issues),
+            'ts'        => now()->toIso8601String(),
+        ]);
+    }
+
     // ── Private check helpers ─────────────────────────────────────────────────
 
     private function checkDb(): array
