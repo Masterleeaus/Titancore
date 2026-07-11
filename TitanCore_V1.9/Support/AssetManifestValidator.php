@@ -125,13 +125,17 @@ class AssetManifestValidator
         $warnings = [];
 
         // 1. Schema / manifest version check (if declared)
-        $manifestVersion = $data['manifest_version'] ?? $data['schema_version'] ?? null;
+        $manifestVersionKey = array_key_exists('manifest_version', $data)
+            ? 'manifest_version'
+            : (array_key_exists('schema_version', $data) ? 'schema_version' : null);
+        $manifestVersion = $manifestVersionKey !== null ? $data[$manifestVersionKey] : null;
         if (is_string($manifestVersion) && $manifestVersion !== '') {
             $supportedVersions = array_values(array_unique(array_merge(self::SUPPORTED_SCHEMA_VERSIONS, self::SUPPORTED_MANIFEST_VERSIONS)));
 
             if (! in_array($manifestVersion, $supportedVersions, true)) {
                 $errors[] = sprintf(
-                    'Unknown manifest_version "%s" in %s. Supported: [%s].',
+                    'Unknown %s "%s" in %s. Supported: [%s].',
+                    $manifestVersionKey,
                     $manifestVersion,
                     $label,
                     implode(', ', $supportedVersions)
@@ -142,6 +146,10 @@ class AssetManifestValidator
         // 2. Required top-level fields for this type
         $required = self::REQUIRED_BY_TYPE[$type] ?? ['name', 'version', 'description'];
         foreach ($required as $field) {
+            if ($field === 'capabilities' && array_key_exists($field, $data) && is_array($data[$field])) {
+                continue;
+            }
+
             if (! isset($data[$field]) || $data[$field] === '' || $data[$field] === [] || $data[$field] === null) {
                 $errors[] = "Missing or empty required field \"{$field}\" in {$label}.";
             }
