@@ -2,6 +2,10 @@
 
 namespace Modules\TitanCore\Tests\Unit;
 
+use Modules\TitanCore\Console\Commands\GenerateManifestCommand;
+use Modules\TitanCore\Http\Controllers\Api\V1\PlatformController;
+use Modules\TitanCore\Http\Controllers\Api\V1\ProvidersController;
+use Modules\TitanCore\Services\TitanCoreModelGateway;
 use PHPUnit\Framework\TestCase;
 
 class ApiSurfaceVerificationTest extends TestCase
@@ -19,28 +23,86 @@ class ApiSurfaceVerificationTest extends TestCase
 
     public function test_platform_config_exposes_titanai_and_magicai_provider_flags(): void
     {
-        $controller = file_get_contents(__DIR__ . '/../../Http/Controllers/Api/V1/PlatformController.php');
+        $originalConfig = $GLOBALS['__titan_config'] ?? [];
 
-        $this->assertIsString($controller);
-        $this->assertStringContainsString("'titanai_configured'", $controller);
-        $this->assertStringContainsString("'magicai_configured'", $controller);
+        $GLOBALS['__titan_config'] = [
+            'app' => [
+                'debug' => false,
+                'timezone' => 'UTC',
+                'locale' => 'en',
+            ],
+            'queue' => ['default' => 'sync'],
+            'cache' => ['default' => 'file'],
+            'session' => ['driver' => 'file'],
+            'mail' => ['default' => 'smtp'],
+            'titancore' => [
+                'providers' => [
+                    'titanai' => ['base_url' => 'https://gateway.example.test'],
+                ],
+                'magicai' => [
+                    'base_url' => 'https://legacy.example.test',
+                ],
+            ],
+        ];
+
+        try {
+            $response = (new PlatformController())->config();
+            $data = $response->getData(true);
+
+            $this->assertTrue($data['providers']['titanai_configured']);
+            $this->assertTrue($data['providers']['magicai_configured']);
+        } finally {
+            $GLOBALS['__titan_config'] = $originalConfig;
+        }
     }
 
     public function test_provider_failover_endpoint_uses_runtime_failover_lists(): void
     {
-        $controller = file_get_contents(__DIR__ . '/../../Http/Controllers/Api/V1/ProvidersController.php');
+        $originalConfig = $GLOBALS['__titan_config'] ?? [];
 
-        $this->assertIsString($controller);
-        $this->assertStringContainsString("config('titan_model_runtime.failover.chat_providers', [])", $controller);
-        $this->assertStringContainsString("config('titan_model_runtime.failover.embedding_providers', [])", $controller);
+        $GLOBALS['__titan_config'] = [
+            'titan_model_runtime' => [
+                'failover' => [
+                    'enabled' => true,
+                    'chat_providers' => ['openai', 'local'],
+                    'embedding_providers' => ['openai'],
+                ],
+            ],
+        ];
+
+        try {
+            $response = (new ProvidersController(new TitanCoreModelGateway()))->failover();
+            $data = $response->getData(true);
+
+            $this->assertTrue($data['enabled']);
+            $this->assertSame(['openai', 'local'], $data['chat_providers']);
+            $this->assertSame(['openai'], $data['embedding_providers']);
+            $this->assertSame(['openai', 'local'], $data['chain']);
+        } finally {
+            $GLOBALS['__titan_config'] = $originalConfig;
+        }
     }
 
     public function test_manifest_generation_skips_manifest_file_itself(): void
     {
-        $command = file_get_contents(__DIR__ . '/../../Console/Commands/GenerateManifestCommand.php');
+        $tmpDir = sys_get_temp_dir() . '/titancore_manifest_' . uniqid('', true);
+        mkdir($tmpDir, 0755, true);
+        file_put_contents($tmpDir . '/MANIFEST.sha256', 'stale');
+        file_put_contents($tmpDir . '/keep.txt', 'keep');
 
-        $this->assertIsString($command);
-        $this->assertStringContainsString("private const SKIP_FILES = ['MANIFEST.sha256'];", $command);
-        $this->assertStringContainsString("if (in_array(\$relPath, self::SKIP_FILES, true))", $command);
+        try {
+            $command = new GenerateManifestCommand();
+            $method = new \ReflectionMethod(GenerateManifestCommand::class, 'collectFiles');
+            $method->setAccessible(true);
+
+            $files = $method->invoke($command, $tmpDir);
+
+            $this->assertContains($tmpDir . '/keep.txt', $files);
+            $this->assertNotContains($tmpDir . '/MANIFEST.sha256', $files);
+        } finally {
+            @unlink($tmpDir . '/MANIFEST.sha256');
+            @unlink($tmpDir . '/keep.txt');
+            @rmdir($tmpDir);
+        }
     }
 }
