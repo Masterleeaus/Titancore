@@ -48,6 +48,8 @@ class TitanCoreServiceProvider extends ServiceProvider
         // Super Admin lock middleware
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('titancore.superadmin', SuperAdmin::class);
+        // AI policy middleware — previously registered only in AIServiceProvider
+        $router->aliasMiddleware('ai.policy', \Modules\TitanCore\Http\Middleware\CheckAiPolicy::class);
 
         // Web routes
         $web = __DIR__.'/../Routes/web.php';
@@ -112,6 +114,15 @@ class TitanCoreServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../Config/config.php', 'titancore');
         $this->mergeConfigFrom(__DIR__.'/../Config/titan_agents.php', 'titan_agents');
         $this->mergeConfigFrom(__DIR__.'/../Config/titan-model-runtime.php', 'titan_model_runtime');
+
+        // AI sub-configs — previously merged only when AIServiceProvider was loaded.
+        // Consolidated here so they are always available regardless of whether
+        // AIServiceProvider is registered by the host application.
+        $this->mergeConfigFrom(__DIR__.'/../Config/ai.php', 'titancore');
+        $this->mergeConfigFrom(__DIR__.'/../Config/tools.php', 'titancore.tools');
+        $this->mergeConfigFrom(__DIR__.'/../Config/permissions.php', 'titancore.permissions');
+        $this->mergeConfigFrom(__DIR__.'/../Config/policies.php', 'titancore.policies');
+        $this->mergeConfigFrom(__DIR__.'/../Config/metrics.php', 'titancore.metrics');
 
         // Bind Titan AI client/provider/router (lazy + safe)
         $this->app->singleton(TitanAiClient::class);

@@ -6,6 +6,18 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * SyncTitanEchoAssistCommand
+ *
+ * Synchronises the default KB collections and agents declared in the
+ * `titan_agents` configuration into the database.  Safe to run multiple
+ * times — uses `updateOrInsert` so existing rows are updated rather than
+ * duplicated.
+ *
+ * Usage:
+ *   php artisan titan:sync-agents
+ *   php artisan titan:sync-agents --tenant_id=42
+ */
 class SyncTitanEchoAssistCommand extends Command
 {
     protected $signature = 'titan:sync-agents {--tenant_id=}';

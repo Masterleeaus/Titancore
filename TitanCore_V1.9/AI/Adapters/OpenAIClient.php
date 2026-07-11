@@ -8,7 +8,7 @@ use Modules\TitanCore\Services\UsageLogger;
 
 class OpenAIClient implements ClientInterface
 {
-    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled in TitanCore Pass 1. Use the TitanZero gateway.';
+    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled. All AI requests must route through the TitanZero gateway.';
 
     protected string $apiKey;
     protected string $model;

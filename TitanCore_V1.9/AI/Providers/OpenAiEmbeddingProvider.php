@@ -13,7 +13,7 @@ use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
 class OpenAiEmbeddingProvider implements EmbeddingProviderContract
 {
     protected string $provider = 'openai';
-    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled in TitanCore Pass 1. Route embedding requests through TitanZero.';
+    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled. Route embedding requests through the TitanZero gateway.';
 
     public function __construct(
         protected string $apiKey = '',

@@ -1,7 +1,12 @@
 <?php
+
+/**
+ * TitanCore Tool Registry
+ *
+ * Maps tool slugs to their handler classes for platform-level tools only.
+ * Business-domain tools (CRM, Calendar, Dispatch, etc.) must be registered
+ * by their respective domain modules — never inside TitanCore.
+ */
 return [
-  'registry' => [
-    'calendar.create_booking' => Modules\TitanCore\Tools\CalendarCreateBookingTool::class,
-    'crm.create_lead'        => Modules\TitanCore\Tools\CrmCreateLeadTool::class
-  ]
+    'registry' => [],
 ];
