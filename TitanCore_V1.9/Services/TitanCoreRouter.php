@@ -6,12 +6,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 
 /**
  * TitanCoreRouter
  *
- * Routes invocations to backend providers (Titan AI currently).
+ * Routes invocations through the canonical TitanCore model gateway.
  *
  * Key resolution order (Titan AI):
  * 1) Tenant/company context key (titan_tenant_links where company_id = active company id)
@@ -20,19 +19,19 @@ use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
  */
 class TitanCoreRouter
 {
-    public function __construct(protected TitanCoreAiProvider $provider) {}
+    public function __construct(protected TitanCoreModelGateway $gateway) {}
 
     public function invokeTool(array $request): array
     {
         $providers = config('titancore.providers', []);
-        $magic = Arr::get($providers, 'titanai', []);
+        $providerConfig = Arr::get($providers, 'titanai', []);
 
-        if (!Arr::get($magic, 'enabled', false)) {
+        if (!Arr::get($providerConfig, 'enabled', false)) {
             return ['ok' => false, 'status' => 503, 'body' => ['error' => 'Titan AI provider disabled']];
         }
 
-        $baseUrl = (string) Arr::get($magic, 'base_url', '');
-        $apiKey = $this->resolvetitanaiKey((string) Arr::get($magic, 'api_key', ''));
+        $baseUrl = (string) Arr::get($providerConfig, 'base_url', '');
+        $apiKey = $this->resolvetitanaiKey((string) Arr::get($providerConfig, 'api_key', ''));
 
         if (!$baseUrl) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (base_url)']];
@@ -60,7 +59,16 @@ class TitanCoreRouter
             }
         } catch (\Throwable $e) {}
 
-        $result = $this->provider->invoke($request, $magic);
+        $runtimeConfig = array_merge($providerConfig, [
+            'api_key' => $apiKey,
+        ]);
+
+        $result = $this->gateway->invokeTool($request, $runtimeConfig, [
+            'provider' => 'titanai',
+            'company_id' => $this->resolveCompanyIdFromContext() ?: 1,
+            'user_id' => Auth::check() ? Auth::id() : null,
+            'feature' => (string) (\Illuminate\Support\Arr::get($request, 'tool') ?: 'proxy'),
+        ]);
 
         try {
             if ($runId && DB::getSchemaBuilder()->hasTable('ai_runs')) {

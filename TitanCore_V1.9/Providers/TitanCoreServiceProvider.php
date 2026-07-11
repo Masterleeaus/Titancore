@@ -42,6 +42,8 @@ use Modules\TitanCore\Console\Commands\Mdk\MigrateSdkCommand;
 use Modules\TitanCore\Console\Commands\Mdk\TitanDoctorCommand;
 use Modules\TitanCore\Console\Commands\Mdk\ValidateModuleCommand;
 use Modules\TitanCore\Console\SyncTitanEchoAssistCommand;
+use Modules\TitanCore\Services\MagicAiClient;
+use Modules\TitanCore\Services\Providers\MagicAiProvider;
 use Modules\TitanCore\Services\Providers\TitanAiProvider;
 use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 use Modules\TitanCore\Services\TitanAiClient;
@@ -173,8 +175,10 @@ class TitanCoreServiceProvider extends ServiceProvider
         // Bind canonical TitanCore AI client/provider + legacy aliases.
         $this->app->singleton(TitanCoreAiClient::class);
         $this->app->singleton(TitanAiClient::class, fn ($app) => $app->make(TitanCoreAiClient::class));
+        $this->app->singleton(MagicAiClient::class, fn ($app) => $app->make(TitanCoreAiClient::class));
         $this->app->singleton(TitanCoreAiProvider::class);
         $this->app->singleton(TitanAiProvider::class, fn ($app) => $app->make(TitanCoreAiProvider::class));
+        $this->app->singleton(MagicAiProvider::class, fn ($app) => $app->make(TitanCoreAiProvider::class));
         $this->app->singleton(TitanCoreRouter::class);
 
         // Model runtime gateway + failover chain

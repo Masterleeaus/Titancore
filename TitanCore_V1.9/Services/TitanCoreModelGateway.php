@@ -11,6 +11,7 @@ use Modules\TitanCore\AI\Providers\OpenAiChatProvider;
 use Modules\TitanCore\AI\Providers\OpenAiEmbeddingProvider;
 use Modules\TitanCore\Contracts\AI\ChatProviderContract;
 use Modules\TitanCore\Contracts\AI\EmbeddingProviderContract;
+use Modules\TitanCore\Services\Providers\TitanCoreAiProvider;
 use Modules\TitanCore\Services\UsageCostLogger;
 
 /**
@@ -83,6 +84,23 @@ class TitanCoreModelGateway
     {
         $chatProvider = $this->resolveChatProvider($providerKey);
         return $chatProvider->health();
+    }
+
+    /**
+     * Route TitanCore tool/proxy requests through the canonical TitanCore AI provider.
+     */
+    public function invokeTool(array $request, array $config = [], array $context = []): array
+    {
+        $startedAt = microtime(true);
+        $provider = $this->resolveTitanCoreAiProvider();
+        $result = $provider->invoke($request, $config);
+
+        $result['provider'] ??= 'titanai';
+        $result['latency_ms'] ??= (int) round((microtime(true) - $startedAt) * 1000);
+
+        $this->logUsage('tool', $result, $context);
+
+        return $result;
     }
 
     // -------------------------------------------------------------------------
@@ -197,6 +215,22 @@ class TitanCoreModelGateway
         }
 
         return new $class();
+    }
+
+    protected function resolveTitanCoreAiProvider(): TitanCoreAiProvider
+    {
+        if ($this->container) {
+            try {
+                return $this->container->make(TitanCoreAiProvider::class);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException(
+                    sprintf('TitanCore failed to resolve AI proxy provider [%s]: %s', TitanCoreAiProvider::class, $e->getMessage()),
+                    previous: $e,
+                );
+            }
+        }
+
+        return new TitanCoreAiProvider(new TitanCoreAiClient());
     }
 
     // -------------------------------------------------------------------------

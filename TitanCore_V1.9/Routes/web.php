@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\TitanCore\Http\Controllers\Admin\MagicAiConsoleController;
 use Modules\TitanCore\Http\Controllers\Tenant\TitanAiLauncherController;
 use Modules\TitanCore\Http\Controllers\Admin\TitanAiConsoleController;
+use Modules\TitanCore\Http\Controllers\Tenant\MagicAiLauncherController;
 use Modules\TitanCore\Http\Controllers\PromptController;
 use Modules\TitanCore\Http\Controllers\HealthController;
 use Modules\TitanCore\Http\Controllers\Admin\DashboardController;
@@ -51,6 +53,7 @@ Route::group([
     'middleware' => ['web', 'auth', 'super-admin'],
 ], function () {
     Route::get('/titanai', [TitanAiConsoleController::class, 'index'])->name('titancore.admin.titanai.console');
+    Route::get('/magicai', [MagicAiConsoleController::class, 'index'])->name('titancore.admin.magicai.console');
 });
 
 
@@ -61,6 +64,7 @@ Route::group([
     'middleware' => ['web', 'auth'],
 ], function () {
     Route::get('/titanai', [TitanAiLauncherController::class, 'index'])->name('titancore.tenant.titanai.launcher');
+    Route::get('/magicai', [MagicAiLauncherController::class, 'index'])->name('titancore.tenant.magicai.launcher');
 });
 
 
