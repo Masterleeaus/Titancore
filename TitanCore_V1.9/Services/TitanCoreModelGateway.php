@@ -158,9 +158,8 @@ class TitanCoreModelGateway
     /**
      * Resolve provider instances through the container when available.
      *
-     * @template T of ChatProviderContract|EmbeddingProviderContract
-     * @param  class-string<T>  $class
-     * @return T
+     * @param  class-string<ChatProviderContract|EmbeddingProviderContract>  $class
+     * @return ChatProviderContract|EmbeddingProviderContract
      */
     protected function resolveProvider(string $class): ChatProviderContract|EmbeddingProviderContract
     {

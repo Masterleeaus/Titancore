@@ -119,11 +119,15 @@ class TitanCoreModelGatewayTest extends TestCase
             ],
         ]);
 
-        $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
-        $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
-        $method->setAccessible(true);
-        $this->expectNotToPerformAssertions();
-        $method->invoke($provider);
+        try {
+            $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
+            $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
+            $method->setAccessible(true);
+            $this->expectNotToPerformAssertions();
+            $method->invoke($provider);
+        } finally {
+            $this->restoreConfig();
+        }
     }
 
     /**
@@ -152,10 +156,7 @@ class TitanCoreModelGatewayTest extends TestCase
 
     protected function tearDown(): void
     {
-        if ($this->configBackup !== null) {
-            $GLOBALS['__titan_config'] = $this->configBackup;
-            $this->configBackup = null;
-        }
+        $this->restoreConfig();
 
         parent::tearDown();
     }
@@ -164,5 +165,13 @@ class TitanCoreModelGatewayTest extends TestCase
     {
         $this->configBackup = $GLOBALS['__titan_config'] ?? [];
         $GLOBALS['__titan_config'] = $config;
+    }
+
+    private function restoreConfig(): void
+    {
+        if ($this->configBackup !== null) {
+            $GLOBALS['__titan_config'] = $this->configBackup;
+            $this->configBackup = null;
+        }
     }
 }
