@@ -2,7 +2,7 @@
 
 namespace Modules\TitanCore\AI\Adapters;
 
-use Modules\TitanCore\AI\ClientInterface;
+use Modules\TitanCore\Contracts\AI\ClientInterface;
 
 class OpenAIHttpClient implements ClientInterface
 {
@@ -21,7 +21,7 @@ class OpenAIHttpClient implements ClientInterface
         return ['ok'=>false, 'content'=>null, 'usage'=>null, 'reason'=>self::DISABLED_REASON];
     }
 
-    public function embed(array $input, array $opts = []): array
+    public function embed(string $input, array $opts = []): array
     {
         if (!$this->apiKey) return ['ok'=>false, 'vector'=>null, 'reason'=>'Missing OPENAI_API_KEY'];
         return ['ok'=>false, 'vector'=>null, 'reason'=>self::DISABLED_REASON];

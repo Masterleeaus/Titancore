@@ -2,7 +2,6 @@
 
 namespace Modules\TitanCore\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class MagicAiConsoleController extends Controller

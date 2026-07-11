@@ -3,12 +3,12 @@ namespace Modules\TitanCore\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use Modules\TitanCore\Contracts\AI\ClientInterface;
 use Modules\TitanCore\Support\Idempotency;
 use Modules\TitanCore\Events\AiRequestCompleted;
+use Modules\TitanCore\Services\TitanCoreModelGateway;
 
 class ChatApiController extends Controller {
-  public function chat(Request $r, ClientInterface $client){
+  public function chat(Request $r, TitanCoreModelGateway $gateway){
     $messages = $r->input('messages', []);
     $options  = $r->input('options', []);
     if (!is_array($messages) || empty($messages)) return response()->json(['error'=>'messages[] required'], 422);
@@ -22,7 +22,12 @@ class ChatApiController extends Controller {
     $started = microtime(true);
     $status = 'ok'; $tokensIn = 0; $tokensOut = 0; $cost = 0.0; $resp = null;
     try {
-      $resp = $client->chat($messages, $options);
+      $context = array_filter([
+        'tenant_id' => $tenantId,
+        'module' => $r->input('module'),
+        'operation' => $r->input('operation'),
+      ], static fn ($value) => $value !== null);
+      $resp = $gateway->chat($messages, $context, $options);
       if (isset($resp['error'])) { $status = 'error'; }
       $tokensIn  = $resp['usage']['prompt_tokens']     ?? 0;
       $tokensOut = $resp['usage']['completion_tokens'] ?? 0;
@@ -31,7 +36,7 @@ class ChatApiController extends Controller {
       $status = 'error'; $resp = ['error'=>$e->getMessage()];
     } finally {
       $meta = [
-        'provider' => 'openai',
+        'provider' => $options['provider'] ?? 'openai',
         'model'    => $options['model'] ?? null,
         'response' => $resp,
         'latency_ms' => (int) ((microtime(true) - $started) * 1000),

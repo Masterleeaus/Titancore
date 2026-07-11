@@ -2,9 +2,8 @@
 
 namespace Modules\TitanCore\AI\Adapters;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Modules\TitanCore\AI\ClientInterface;
+use Modules\TitanCore\Contracts\AI\ClientInterface;
 use Modules\TitanCore\Services\UsageLogger;
 
 class AnthropicClient implements ClientInterface
@@ -35,7 +34,7 @@ class AnthropicClient implements ClientInterface
         return ['ok' => false, 'content' => null, 'usage' => null, 'reason' => self::DISABLED_REASON];
     }
 
-    public function embed(array $input, array $opts = []): array
+    public function embed(string $input, array $opts = []): array
     {
         if (!$this->openAiApiKey) {
             return ['ok' => false, 'vector' => null, 'reason' => 'Anthropic does not support embeddings and OPENAI_API_KEY is missing'];
