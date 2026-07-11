@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PromptApiController extends Controller
 {
@@ -95,10 +96,9 @@ class PromptApiController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatePromptPayload($request, true);
-        $namespace = $data['namespace'] ?? $data['title'];
-        $slug = $data['slug'] ?? Str::slug($namespace);
-        $locale = $data['locale'] ?? 'en';
+        ['namespace' => $namespace, 'slug' => $slug, 'locale' => $locale] = $this->resolvePromptIdentity($data);
         $metadata = $this->normalizeMetadata($data);
+        $content = $this->normalizeContent($data);
         $version = $this->nextVersion($namespace, $slug, $locale);
 
         $payload = [
@@ -106,7 +106,7 @@ class PromptApiController extends Controller
             'slug' => $slug,
             'version' => $version,
             'locale' => $locale,
-            'content' => $data['content'],
+            'content' => $content,
             'metadata' => json_encode($metadata),
             'source' => $data['source'] ?? 'core',
             'created_at' => now(),
@@ -122,7 +122,7 @@ class PromptApiController extends Controller
         return response()->json([
             'id' => $id,
             'version' => $version,
-            'prompt' => $this->decodePromptMetadata((object) array_merge(['id' => $id], $payload)),
+            'prompt' => $this->hydratePromptRow(null, $payload, $id),
         ], 201);
     }
 
@@ -134,16 +134,15 @@ class PromptApiController extends Controller
         }
 
         $data = $this->validatePromptPayload($request, false);
-        $namespace = $data['namespace'] ?? $data['title'] ?? $row->namespace;
-        $slug = $data['slug'] ?? (! empty($data['title']) ? Str::slug($namespace) : $row->slug);
-        $locale = $data['locale'] ?? $row->locale;
+        ['namespace' => $namespace, 'slug' => $slug, 'locale' => $locale] = $this->resolvePromptIdentity($data, $row);
         $metadata = $this->normalizeMetadata($data, $row);
+        $content = $this->normalizeContent($data, (string) $row->content);
 
         $payload = [
             'namespace' => $namespace,
             'slug' => $slug,
             'locale' => $locale,
-            'content' => $data['content'] ?? $row->content,
+            'content' => $content,
             'metadata' => json_encode($metadata),
             'source' => $data['source'] ?? $row->source,
             'updated_at' => now(),
@@ -157,7 +156,7 @@ class PromptApiController extends Controller
 
         return response()->json([
             'id' => $id,
-            'prompt' => $this->decodePromptMetadata((object) array_merge((array) $row, $payload, ['id' => $id])),
+            'prompt' => $this->hydratePromptRow($row, $payload, $id),
         ]);
     }
 
@@ -175,8 +174,9 @@ class PromptApiController extends Controller
     private function validatePromptPayload(Request $request, bool $isCreate): array
     {
         $rules = [
-            'namespace' => $isCreate ? 'required_without:title|string|max:128' : 'sometimes|string|max:128',
-            'title' => $isCreate ? 'required_without:namespace|string|max:255' : 'sometimes|string|max:255',
+            // Namespace is the canonical prompt identity. Title is optional display metadata.
+            'namespace' => $isCreate ? 'required|string|max:128' : 'sometimes|string|max:128',
+            'title' => 'sometimes|string|max:255',
             'slug' => 'sometimes|string|max:128',
             'locale' => 'sometimes|string|max:16',
             'content' => $isCreate ? 'required|string|min:1' : 'sometimes|string|min:1',
@@ -203,8 +203,8 @@ class PromptApiController extends Controller
     {
         $metadata = [];
 
-        if ($existing && isset($existing->metadata)) {
-            $decoded = json_decode((string) $existing->metadata, true);
+        if ($existing && isset($existing->metadata) && is_string($existing->metadata)) {
+            $decoded = $this->decodeJsonToArray($existing->metadata);
             if (is_array($decoded)) {
                 $metadata = $decoded;
             }
@@ -223,19 +223,78 @@ class PromptApiController extends Controller
         return $metadata;
     }
 
+    private function resolvePromptIdentity(array $data, ?object $existing = null): array
+    {
+        $namespace = (string) ($data['namespace'] ?? $existing?->namespace ?? '');
+
+        $slug = (string) ($data['slug'] ?? '');
+        if ($slug === '') {
+            $slug = Str::slug($namespace);
+            if ($slug === '') {
+                throw ValidationException::withMessages([
+                    'slug' => 'A slug is required when the namespace contains no valid ASCII characters for slug generation.',
+                ]);
+            }
+        }
+
+        $locale = (string) ($data['locale'] ?? $existing?->locale ?? 'en');
+
+        return compact('namespace', 'slug', 'locale');
+    }
+
+    private function normalizeContent(array $data, ?string $fallback = null): string
+    {
+        $content = (string) ($data['content'] ?? $fallback ?? '');
+        $content = trim($content);
+
+        if ($content === '') {
+            throw ValidationException::withMessages([
+                'content' => 'The content field must contain non-whitespace characters.',
+            ]);
+        }
+
+        return $content;
+    }
+
+    private function hydratePromptRow(?object $existing, array $payload, int $id): object
+    {
+        $values = $existing ? (array) $existing : [];
+        $values['id'] = $id;
+
+        foreach ($payload as $key => $value) {
+            $values[$key] = $value;
+        }
+
+        return $this->decodePromptMetadata((object) $values);
+    }
+
     private function decodePromptMetadata(object $row): object
     {
         if (! isset($row->metadata) || ! is_string($row->metadata)) {
             return $row;
         }
 
-        $decoded = json_decode($row->metadata, true);
-        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+        $decoded = $this->decodeJsonObject($row->metadata);
+        if (! is_array($decoded)) {
             return $row;
         }
 
         $row->metadata = $decoded;
 
         return $row;
+    }
+
+    private function decodeJsonToArray(?string $json): ?array
+    {
+        if ($json === null) {
+            return null;
+        }
+
+        $decoded = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            return null;
+        }
+
+        return $decoded;
     }
 }

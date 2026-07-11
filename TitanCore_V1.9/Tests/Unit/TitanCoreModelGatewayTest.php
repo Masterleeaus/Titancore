@@ -101,7 +101,7 @@ class TitanCoreModelGatewayTest extends TestCase
         $this->assertSame([LocalModelProvider::class], $resolved);
     }
 
-    public function testValidateTitanConfigDoesNotThrowWithUnderscoredRuntimeKey(): void
+    public function test_validate_titan_config_does_not_throw_with_underscored_runtime_key(): void
     {
         $originalConfig = $GLOBALS['__titan_config'] ?? [];
 
