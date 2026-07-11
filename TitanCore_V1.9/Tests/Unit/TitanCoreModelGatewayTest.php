@@ -14,6 +14,8 @@ use ReflectionMethod;
 
 class TitanCoreModelGatewayTest extends TestCase
 {
+    private ?array $configBackup = null;
+
     public function test_chat_resolves_providers_through_the_container(): void
     {
         $resolved = [];
@@ -101,11 +103,9 @@ class TitanCoreModelGatewayTest extends TestCase
         $this->assertSame([LocalModelProvider::class], $resolved);
     }
 
-    public function test_validate_titan_config_uses_the_underscored_runtime_key(): void
+    public function test_validate_titan_config_uses_underscored_runtime_key(): void
     {
-        $originalConfig = $GLOBALS['__titan_config'] ?? [];
-
-        $GLOBALS['__titan_config'] = [
+        $this->swapConfig([
             'titan_model_runtime' => [
                 'providers' => [
                     'openai' => ['api_key' => 'test'],
@@ -117,16 +117,13 @@ class TitanCoreModelGatewayTest extends TestCase
             'titan-modules' => [
                 'path' => 'Modules',
             ],
-        ];
-        try {
-            $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
-            $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
-            $method->setAccessible(true);
-            $this->expectNotToPerformAssertions();
-            $method->invoke($provider);
-        } finally {
-            $GLOBALS['__titan_config'] = $originalConfig;
-        }
+        ]);
+
+        $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
+        $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
+        $method->setAccessible(true);
+        $this->expectNotToPerformAssertions();
+        $method->invoke($provider);
     }
 
     /**
@@ -151,5 +148,21 @@ class TitanCoreModelGatewayTest extends TestCase
         });
 
         return $container;
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->configBackup !== null) {
+            $GLOBALS['__titan_config'] = $this->configBackup;
+            $this->configBackup = null;
+        }
+
+        parent::tearDown();
+    }
+
+    private function swapConfig(array $config): void
+    {
+        $this->configBackup = $GLOBALS['__titan_config'] ?? [];
+        $GLOBALS['__titan_config'] = $config;
     }
 }
