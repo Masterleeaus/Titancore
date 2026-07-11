@@ -27,10 +27,16 @@ use Modules\TitanCore\Services\UsageCostLogger;
  */
 class TitanCoreModelGateway
 {
+    protected object $chatFailoverState;
+    protected object $embeddingFailoverState;
+
     public function __construct(
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
-    ) {}
+    ) {
+        $this->chatFailoverState = ProviderFailoverChain::newStateStore();
+        $this->embeddingFailoverState = ProviderFailoverChain::newStateStore();
+    }
 
     /**
      * Route a chat completion request to the appropriate provider.
@@ -133,26 +139,42 @@ class TitanCoreModelGateway
     {
         $list    = config('titan_model_runtime.failover.chat_providers', ['openai']);
         $statuses = config('titan_model_runtime.failover.on_statuses', [429, 500, 502, 503, 504]);
+        $backoffBaseMs = (int) config('titan_model_runtime.failover.backoff.base_delay_ms', 0);
+        $backoffMaxMs = (int) config('titan_model_runtime.failover.backoff.max_delay_ms', 0);
+        $circuitThreshold = (int) config('titan_model_runtime.failover.circuit_breaker.failure_threshold', 0);
+        $circuitCooldown = (int) config('titan_model_runtime.failover.circuit_breaker.cooldown_seconds', 60);
 
         $providers = array_map(
             fn (string $k) => $this->buildChatProvider($k),
             $list
         );
 
-        return (new ProviderFailoverChain($providers))->setFailoverStatuses($statuses);
+        return (new ProviderFailoverChain($providers))
+            ->setStateStore($this->chatFailoverState)
+            ->setFailoverStatuses($statuses)
+            ->setBackoff($backoffBaseMs, $backoffMaxMs)
+            ->setCircuitBreaker($circuitThreshold, $circuitCooldown);
     }
 
     protected function buildEmbeddingFailoverChain(): ProviderFailoverChain
     {
         $list    = config('titan_model_runtime.failover.embedding_providers', ['openai']);
         $statuses = config('titan_model_runtime.failover.on_statuses', [429, 500, 502, 503, 504]);
+        $backoffBaseMs = (int) config('titan_model_runtime.failover.backoff.base_delay_ms', 0);
+        $backoffMaxMs = (int) config('titan_model_runtime.failover.backoff.max_delay_ms', 0);
+        $circuitThreshold = (int) config('titan_model_runtime.failover.circuit_breaker.failure_threshold', 0);
+        $circuitCooldown = (int) config('titan_model_runtime.failover.circuit_breaker.cooldown_seconds', 60);
 
         $providers = array_map(
             fn (string $k) => $this->buildEmbeddingProvider($k),
             $list
         );
 
-        return (new ProviderFailoverChain($providers))->setFailoverStatuses($statuses);
+        return (new ProviderFailoverChain($providers))
+            ->setStateStore($this->embeddingFailoverState)
+            ->setFailoverStatuses($statuses)
+            ->setBackoff($backoffBaseMs, $backoffMaxMs)
+            ->setCircuitBreaker($circuitThreshold, $circuitCooldown);
     }
 
     /**

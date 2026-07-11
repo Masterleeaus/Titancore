@@ -219,6 +219,147 @@ class ProviderAdaptersTest extends TestCase
         $this->assertNotEmpty($result['vectors']);
     }
 
+    public function test_failover_chain_applies_exponential_backoff_before_retry(): void
+    {
+        $delays = [];
+
+        $failing = $this->createStub(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $failing->method('chat')->willReturn([
+            'ok'         => false,
+            'content'    => null,
+            'usage'      => null,
+            'model'      => null,
+            'latency_ms' => 50,
+            'provider'   => 'openai-backoff',
+            'error'      => 'rate limited',
+            'status'     => 429,
+        ]);
+        $failing->method('providerName')->willReturn('openai-backoff');
+
+        $backup = $this->createStub(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $backup->method('chat')->willReturn([
+            'ok'         => true,
+            'content'    => 'from backup',
+            'usage'      => null,
+            'model'      => 'llama3',
+            'latency_ms' => 200,
+            'provider'   => 'local',
+            'error'      => null,
+        ]);
+        $backup->method('providerName')->willReturn('local-backoff');
+
+        $chain = (new ProviderFailoverChain([$failing, $backup]))
+            ->setBackoff(25, 100)
+            ->setSleeper(function (int $microseconds) use (&$delays): void {
+                $delays[] = $microseconds;
+            });
+
+        $result = $chain->chat([['role' => 'user', 'content' => 'hi']]);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame([25000], $delays);
+    }
+
+    public function test_failover_chain_opens_circuit_after_retryable_failures(): void
+    {
+        $attempts = 0;
+        $now = 1000.0;
+
+        $failing = $this->createMock(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $failing->expects($this->once())
+            ->method('chat')
+            ->willReturnCallback(function () use (&$attempts): array {
+                $attempts++;
+
+                return [
+                    'ok'         => false,
+                    'content'    => null,
+                    'usage'      => null,
+                    'model'      => null,
+                    'latency_ms' => 50,
+                    'provider'   => 'openai-circuit-open',
+                    'error'      => 'rate limited',
+                    'status'     => 429,
+                ];
+            });
+        $failing->method('providerName')->willReturn('openai-circuit-open');
+
+        $backup = $this->createStub(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $backup->method('chat')->willReturn([
+            'ok'         => true,
+            'content'    => 'from backup',
+            'usage'      => null,
+            'model'      => 'llama3',
+            'latency_ms' => 200,
+            'provider'   => 'local',
+            'error'      => null,
+        ]);
+        $backup->method('providerName')->willReturn('local-circuit-open');
+
+        $chain = (new ProviderFailoverChain([$failing, $backup]))
+            ->setCircuitBreaker(1, 60)
+            ->setClock(function () use (&$now): float {
+                return $now;
+            });
+
+        $first = $chain->chat([['role' => 'user', 'content' => 'hi']]);
+        $second = $chain->chat([['role' => 'user', 'content' => 'hi']]);
+
+        $this->assertTrue($first['ok']);
+        $this->assertTrue($second['ok']);
+        $this->assertSame(1, $attempts);
+    }
+
+    public function test_failover_chain_closes_circuit_after_cooldown(): void
+    {
+        $attempts = 0;
+        $now = 1000.0;
+
+        $failing = $this->createMock(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $failing->expects($this->exactly(2))
+            ->method('chat')
+            ->willReturnCallback(function () use (&$attempts): array {
+                $attempts++;
+
+                return [
+                    'ok'         => false,
+                    'content'    => null,
+                    'usage'      => null,
+                    'model'      => null,
+                    'latency_ms' => 50,
+                    'provider'   => 'openai-circuit-cooldown',
+                    'error'      => 'rate limited',
+                    'status'     => 429,
+                ];
+            });
+        $failing->method('providerName')->willReturn('openai-circuit-cooldown');
+
+        $backup = $this->createStub(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);
+        $backup->method('chat')->willReturn([
+            'ok'         => true,
+            'content'    => 'from backup',
+            'usage'      => null,
+            'model'      => 'llama3',
+            'latency_ms' => 200,
+            'provider'   => 'local',
+            'error'      => null,
+        ]);
+        $backup->method('providerName')->willReturn('local-circuit-cooldown');
+
+        $chain = (new ProviderFailoverChain([$failing, $backup]))
+            ->setCircuitBreaker(1, 60)
+            ->setClock(function () use (&$now): float {
+                return $now;
+            });
+
+        $this->assertTrue($chain->chat([['role' => 'user', 'content' => 'hi']])['ok']);
+
+        $now += 61;
+
+        $this->assertTrue($chain->chat([['role' => 'user', 'content' => 'hi']])['ok']);
+        $this->assertSame(2, $attempts);
+    }
+
     public function test_failover_chain_health_delegates_to_primary(): void
     {
         $primary = $this->createStub(\Modules\TitanCore\Contracts\AI\ChatProviderContract::class);

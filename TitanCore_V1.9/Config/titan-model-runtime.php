@@ -73,6 +73,14 @@ return [
         'chat_providers'      => array_filter(array_map('trim', explode(',', env('AI_FAILOVER_CHAT_PROVIDERS', 'openai,local')))),
         'embedding_providers' => array_filter(array_map('trim', explode(',', env('AI_FAILOVER_EMBED_PROVIDERS', 'openai')))),
         'on_statuses'         => [429, 500, 502, 503, 504],
+        'backoff' => [
+            'base_delay_ms' => max(0, (int) env('AI_FAILOVER_BACKOFF_MS', 0)),
+            'max_delay_ms'  => max(0, (int) env('AI_FAILOVER_MAX_BACKOFF_MS', 0)),
+        ],
+        'circuit_breaker' => [
+            'failure_threshold' => max(0, (int) env('AI_FAILOVER_CIRCUIT_THRESHOLD', 0)),
+            'cooldown_seconds'  => max(0, (int) env('AI_FAILOVER_CIRCUIT_COOLDOWN', 60)),
+        ],
     ],
 
 ];
