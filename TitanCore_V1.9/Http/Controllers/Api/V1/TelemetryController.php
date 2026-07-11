@@ -197,7 +197,7 @@ class TelemetryController extends Controller
                 $byProvider[$p] = ['provider' => $p, 'total' => 0, 'success' => 0, 'error' => 0];
             }
             $byProvider[$p]['total']             += (int) $row->cnt;
-            $byProvider[$p][$row->status ?? 'other'] = (int) $row->cnt;
+            $byProvider[$p][$row->status ?? 'other'] = ($byProvider[$p][$row->status ?? 'other'] ?? 0) + (int) $row->cnt;
         }
 
         return response()->json([

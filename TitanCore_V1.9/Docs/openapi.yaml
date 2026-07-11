@@ -4,7 +4,7 @@ info:
   version: 1.9.0
   description: |
     TitanCore is the Platform Kernel of the Titan ecosystem.
-    All endpoints require authentication (****** and super-admin privilege.
+    All endpoints require authentication and super-admin privilege.
     Legacy routes remain available under /api/titancore/ for backwards compatibility.
 servers:
   - url: /api

@@ -307,7 +307,7 @@ class KnowledgeController extends Controller
                 'chunk_index' => $idx++,
                 'content'     => $chunk,
                 'embedding'   => $embedding,
-                'tokens'      => strlen($chunk),
+                'tokens'      => mb_strlen($chunk), // character count (approximation); not word-piece tokens
                 'meta'        => json_encode([]),
                 'created_at'  => now(),
                 'updated_at'  => now(),

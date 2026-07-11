@@ -188,8 +188,8 @@ class DiagnosticsController extends Controller
                     ->get();
 
                 foreach ($rows as $row) {
-                    $stats['total']                       += (int) $row->cnt;
-                    $stats[$row->status ?? 'other'] = (int) $row->cnt;
+                    $stats['total']                    += (int) $row->cnt;
+                    $stats[$row->status ?? 'other']     = ($stats[$row->status ?? 'other'] ?? 0) + (int) $row->cnt;
                 }
             }
         } catch (\Throwable) {}
