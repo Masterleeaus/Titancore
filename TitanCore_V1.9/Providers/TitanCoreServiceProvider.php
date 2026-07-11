@@ -118,6 +118,12 @@ class TitanCoreServiceProvider extends ServiceProvider
         // AI sub-configs — previously merged only when AIServiceProvider was loaded.
         // Consolidated here so they are always available regardless of whether
         // AIServiceProvider is registered by the host application.
+        //
+        // ai.php is merged into 'titancore' (not 'titancore.ai') to preserve
+        // backward-compatibility with consumers that reference keys such as
+        // config('titancore.providers.openai.api_key') or config('titancore.default').
+        // Laravel's mergeConfigFrom only fills missing keys, so this cannot overwrite
+        // values set by config.php which is merged into the same 'titancore' namespace.
         $this->mergeConfigFrom(__DIR__.'/../Config/ai.php', 'titancore');
         $this->mergeConfigFrom(__DIR__.'/../Config/tools.php', 'titancore.tools');
         $this->mergeConfigFrom(__DIR__.'/../Config/permissions.php', 'titancore.permissions');
