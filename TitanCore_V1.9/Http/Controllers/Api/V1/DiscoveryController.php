@@ -119,6 +119,22 @@ class DiscoveryController extends Controller
     }
 
     /**
+     * GET /api/v1/discovery/engines
+     *
+     * Discover all registered engines from manifests.
+     */
+    public function engines(): JsonResponse
+    {
+        $items = $this->discovery->discoverEngines($this->aiDir());
+
+        return response()->json([
+            'data'  => $items,
+            'total' => count($items),
+            'ts'    => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
      * GET /api/v1/discovery/manifests
      *
      * Return all discovered manifests with capability index.
@@ -136,6 +152,7 @@ class DiscoveryController extends Controller
                 'tools'     => $discovered['tools'],
                 'prompts'   => $discovered['prompts'],
                 'workflows' => $discovered['workflows'],
+                'engines'   => $discovered['engines'],
             ],
             'capabilities' => $capabilities,
             'errors'       => $discovered['errors'],

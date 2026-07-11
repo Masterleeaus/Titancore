@@ -15,6 +15,7 @@ use Modules\TitanCore\Support\AssetManifestValidator;
  *   4. AI/Tools/tool.json
  *   5. AI/Prompts/prompt.json
  *   6. AI/Workflows/workflow.json
+ *   7. AI/Engines/engine.json
  *
  * Every discovered manifest is fully validated with {@see AssetManifestValidator}
  * (schema version + required fields + item-level checks) before being returned.
@@ -33,6 +34,7 @@ use Modules\TitanCore\Support\AssetManifestValidator;
  *   'tools'               => array[],     // tool items
  *   'prompts'             => array[],     // prompt items
  *   'workflows'           => array[],     // workflow items
+ *   'engines'             => array[],     // engine items
  *   'registry_capabilities' => string[], // root-level caps from each registry manifest
  *   'errors'              => string[],
  * ]
@@ -48,6 +50,7 @@ class AssetDiscoveryService
         'tool'     => 'Tools/tool.json',
         'prompt'   => 'Prompts/prompt.json',
         'workflow' => 'Workflows/workflow.json',
+        'engine'   => 'Engines/engine.json',
     ];
 
     /** Map of manifest type => item-container key within the manifest JSON */
@@ -57,6 +60,7 @@ class AssetDiscoveryService
         'tool'     => 'tools',
         'prompt'   => 'prompts',
         'workflow' => 'workflows',
+        'engine'   => 'engines',
     ];
 
     public function __construct(
@@ -84,6 +88,7 @@ class AssetDiscoveryService
      *     tools: array,
      *     prompts: array,
      *     workflows: array,
+     *     engines: array,
      *     registry_capabilities: string[],
      *     errors: string[],
      * }
@@ -97,6 +102,7 @@ class AssetDiscoveryService
             'tools'                  => [],
             'prompts'                => [],
             'workflows'              => [],
+            'engines'                => [],
             'registry_capabilities'  => [],   // root-level caps from each registry manifest
             'errors'                 => [],
         ];
@@ -197,13 +203,24 @@ class AssetDiscoveryService
     }
 
     /**
+     * Discover only engine metadata.
+     *
+     * @param  string  $aiDir  Absolute path to the AI/ directory.
+     * @return array[]
+     */
+    public function discoverEngines(string $aiDir): array
+    {
+        return $this->discoverItemsFromManifest($aiDir, 'engine');
+    }
+
+    /**
      * Return all unique capability strings declared across all discovered manifests.
      *
      * Aggregates from:
      *  - asset.json root 'capabilities'
-     *  - Registry-level root 'capabilities' from provider/agent/tool/prompt/workflow manifests
+     *  - Registry-level root 'capabilities' from provider/agent/tool/prompt/workflow/engine manifests
      *    (stored in `registry_capabilities` by discoverFromDirectory)
-     *  - Per-item 'capabilities' from every provider, agent, tool, workflow, prompt item
+     *  - Per-item 'capabilities' from every provider, agent, tool, workflow, prompt, engine item
      *
      * @param  array  $discovered  Output of {@see discoverAll()} or {@see discoverFromDirectory()}.
      * @return string[]  Deduplicated, re-indexed.
@@ -223,7 +240,7 @@ class AssetDiscoveryService
         }
 
         // 3. Per-item capabilities (providers, agents, tools, workflows, prompts)
-        foreach (['providers', 'agents', 'tools', 'workflows', 'prompts'] as $group) {
+        foreach (['providers', 'agents', 'tools', 'workflows', 'prompts', 'engines'] as $group) {
             foreach ($discovered[$group] ?? [] as $item) {
                 foreach ($item['capabilities'] ?? [] as $cap) {
                     $capabilities[] = $cap;
@@ -241,7 +258,7 @@ class AssetDiscoveryService
      * Parse, fully validate, and return items from a single manifest type.
      *
      * @param  string  $aiDir
-     * @param  string  $type  provider|agent|tool|prompt|workflow
+     * @param  string  $type  provider|agent|tool|prompt|workflow|engine
      * @return array[]
      */
     private function discoverItemsFromManifest(string $aiDir, string $type): array

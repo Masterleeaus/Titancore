@@ -42,6 +42,9 @@
     ],
     "workflows": [
       "AI/Workflows/workflow.json"
+    ],
+    "engines": [
+      "AI/Engines/engine.json"
     ]
   },
   "dependencies": {
@@ -90,7 +93,8 @@
       "AI/Agents/agent.json",
       "AI/Tools/tool.json",
       "AI/Prompts/prompt.json",
-      "AI/Workflows/workflow.json"
+      "AI/Workflows/workflow.json",
+      "AI/Engines/engine.json"
     ],
     "platform_manager": {
       "auto_register": true,

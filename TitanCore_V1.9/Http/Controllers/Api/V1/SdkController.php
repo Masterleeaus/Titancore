@@ -193,6 +193,11 @@ class SdkController extends Controller
                 'file'        => $prefix . 'Workflows/workflow.json',
                 'description' => 'Workflow orchestration manifest',
             ],
+            [
+                'type'        => 'engine',
+                'file'        => $prefix . 'Engines/engine.json',
+                'description' => 'Engine runtime manifest',
+            ],
         ];
 
         return response()->json([

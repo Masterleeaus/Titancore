@@ -13,6 +13,7 @@ use Modules\TitanCore\Http\Controllers\Api\V1\AgentsController;
 use Modules\TitanCore\Http\Controllers\Api\V1\CompatibilityController;
 use Modules\TitanCore\Http\Controllers\Api\V1\DiagnosticsController;
 use Modules\TitanCore\Http\Controllers\Api\V1\DiscoveryController;
+use Modules\TitanCore\Http\Controllers\Api\V1\EnginesController;
 use Modules\TitanCore\Http\Controllers\Api\V1\KnowledgeController;
 use Modules\TitanCore\Http\Controllers\Api\V1\MarketplaceController;
 use Modules\TitanCore\Http\Controllers\Api\V1\ModulesController;
@@ -154,6 +155,7 @@ Route::prefix('v1')
             Route::get('/workflows', [DiscoveryController::class, 'workflows'])->name('workflows');
             Route::get('/prompts',   [DiscoveryController::class, 'prompts'])->name('prompts');
             Route::get('/agents',    [DiscoveryController::class, 'agents'])->name('agents');
+            Route::get('/engines',   [DiscoveryController::class, 'engines'])->name('engines');
             Route::get('/manifests', [DiscoveryController::class, 'manifests'])->name('manifests');
         });
 
@@ -212,6 +214,16 @@ Route::prefix('v1')
             Route::get('/goals',    [AgentsController::class, 'goals'])->name('goals');
             Route::get('/plans',    [AgentsController::class, 'plans'])->name('plans');
             Route::get('/results',  [AgentsController::class, 'results'])->name('results');
+        });
+
+        // ── Phase 11b: Engine Framework API ────────────────────────────────
+        Route::prefix('engines')->as('engines.')->group(function () {
+            Route::get('/',           [EnginesController::class, 'index'])->name('index');
+            Route::get('/discover',   [EnginesController::class, 'discover'])->name('discover');
+            Route::post('/validate',  [EnginesController::class, 'validateEngine'])->name('validate');
+            Route::post('/install',   [EnginesController::class, 'install'])->name('install');
+            Route::post('/load',      [EnginesController::class, 'load'])->name('load');
+            Route::post('/lifecycle', [EnginesController::class, 'lifecycle'])->name('lifecycle');
         });
 
         // ── Phase 12: Telemetry & Observability API ───────────────────────
