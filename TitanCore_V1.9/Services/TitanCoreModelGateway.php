@@ -164,7 +164,15 @@ class TitanCoreModelGateway
     protected function resolveProvider(string $class): ChatProviderContract|EmbeddingProviderContract
     {
         if ($this->container) {
-            return $this->container->make($class);
+            try {
+                return $this->container->make($class);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException(
+                    sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
+                    0,
+                    $e,
+                );
+            }
         }
 
         return new $class();
