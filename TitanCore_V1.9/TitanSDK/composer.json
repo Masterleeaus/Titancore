@@ -1,0 +1,21 @@
+{
+  "name": "modules/titansdk",
+  "description": "TitanSDK \u2014 stable public integration surface for Titan modules",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "TitanSDK\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "TitanSDK\\Providers\\TitanSdkServiceProvider"
+      ]
+    }
+  },
+  "require": {
+    "php": "^8.2"
+  }
+}

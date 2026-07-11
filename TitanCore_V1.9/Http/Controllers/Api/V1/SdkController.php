@@ -14,9 +14,42 @@ use Illuminate\Routing\Controller;
  */
 class SdkController extends Controller
 {
+    // Http/Controllers/Api/V1 sits five levels below the TitanCore module root.
+    private const MODULE_ROOT_DEPTH = 5;
+    private const SDK_DIRECTORY = 'TitanSDK';
+
+    private function moduleBasePath(): string
+    {
+        // This controller lives in Http/Controllers/Api/V1, five levels below the module root.
+        return dirname(__DIR__, self::MODULE_ROOT_DEPTH);
+    }
+
+    private function sdkBasePath(): string
+    {
+        return $this->moduleBasePath() . DIRECTORY_SEPARATOR . self::SDK_DIRECTORY;
+    }
+
+    private function manifestPrefix(): string
+    {
+        if (is_dir($this->sdkBasePath() . DIRECTORY_SEPARATOR . 'manifests' . DIRECTORY_SEPARATOR . 'AI')) {
+            return 'TitanSDK/manifests/AI/';
+        }
+
+        return 'AI/';
+    }
+
+    private function moduleManifestPath(): string
+    {
+        if (is_dir($this->sdkBasePath() . DIRECTORY_SEPARATOR . 'manifests' . DIRECTORY_SEPARATOR . 'AI')) {
+            return 'TitanSDK/manifests/module.json';
+        }
+
+        return 'module.json';
+    }
+
     private function moduleMeta(): array
     {
-        $base       = dirname(__DIR__, 5);
+        $base       = $this->moduleBasePath();
         $version    = null;
         $moduleJson = [];
 
@@ -38,32 +71,51 @@ class SdkController extends Controller
     }
 
     /**
+     * @return list<string>
+     */
+    private function listPhpSymbols(string $directory, string $namespace): array
+    {
+        $symbols = [];
+
+        if (! is_dir($directory)) {
+            return $symbols;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = str_replace($directory . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $name = str_replace([DIRECTORY_SEPARATOR, '.php'], ['\\', ''], $relative);
+            $symbols[] = $namespace . '\\' . $name;
+        }
+
+        sort($symbols);
+
+        return $symbols;
+    }
+
+    /**
      * GET /api/v1/sdk/contracts
      *
      * List all public contract interfaces exposed by TitanCore.
      */
     public function contracts(): JsonResponse
     {
-        $contractsDir = dirname(__DIR__, 5) . DIRECTORY_SEPARATOR . 'Contracts';
-        $contracts    = [];
+        $contractsDir = $this->sdkBasePath() . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Contracts';
+        $namespace = 'TitanSDK\\Contracts';
 
-        if (is_dir($contractsDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($contractsDir, \FilesystemIterator::SKIP_DOTS),
-            );
-
-            foreach ($iterator as $file) {
-                if ($file->getExtension() !== 'php') {
-                    continue;
-                }
-
-                $relative   = str_replace($contractsDir . DIRECTORY_SEPARATOR, '', $file->getPathname());
-                $interface  = str_replace([DIRECTORY_SEPARATOR, '.php'], ['\\', ''], $relative);
-                $contracts[] = 'Modules\\TitanCore\\Contracts\\' . $interface;
-            }
+        if (! is_dir($contractsDir)) {
+            $contractsDir = $this->moduleBasePath() . DIRECTORY_SEPARATOR . 'Contracts';
+            $namespace = 'Modules\\TitanCore\\Contracts';
         }
 
-        sort($contracts);
+        $contracts = $this->listPhpSymbols($contractsDir, $namespace);
 
         return response()->json([
             'contracts' => $contracts,
@@ -79,26 +131,15 @@ class SdkController extends Controller
      */
     public function events(): JsonResponse
     {
-        $eventsDir = dirname(__DIR__, 5) . DIRECTORY_SEPARATOR . 'Events';
-        $events    = [];
+        $eventsDir = $this->sdkBasePath() . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Events';
+        $namespace = 'TitanSDK\\Events';
 
-        if (is_dir($eventsDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($eventsDir, \FilesystemIterator::SKIP_DOTS),
-            );
-
-            foreach ($iterator as $file) {
-                if ($file->getExtension() !== 'php') {
-                    continue;
-                }
-
-                $relative = str_replace($eventsDir . DIRECTORY_SEPARATOR, '', $file->getPathname());
-                $event    = str_replace([DIRECTORY_SEPARATOR, '.php'], ['\\', ''], $relative);
-                $events[] = 'Modules\\TitanCore\\Events\\' . $event;
-            }
+        if (! is_dir($eventsDir)) {
+            $eventsDir = $this->moduleBasePath() . DIRECTORY_SEPARATOR . 'Events';
+            $namespace = 'Modules\\TitanCore\\Events';
         }
 
-        sort($events);
+        $events = $this->listPhpSymbols($eventsDir, $namespace);
 
         return response()->json([
             'events' => $events,
@@ -114,35 +155,42 @@ class SdkController extends Controller
      */
     public function manifests(): JsonResponse
     {
+        $prefix = $this->manifestPrefix();
+
         $schemas = [
             [
+                'type'        => 'module',
+                'file'        => $this->moduleManifestPath(),
+                'description' => 'Module metadata manifest',
+            ],
+            [
                 'type'        => 'asset',
-                'file'        => 'AI/asset.json',
+                'file'        => $prefix . 'asset.json',
                 'description' => 'Master AI subsystem manifest listing exported assets',
             ],
             [
                 'type'        => 'provider',
-                'file'        => 'AI/Providers/provider.json',
+                'file'        => $prefix . 'Providers/provider.json',
                 'description' => 'AI provider registration manifest',
             ],
             [
                 'type'        => 'agent',
-                'file'        => 'AI/Agents/agent.json',
+                'file'        => $prefix . 'Agents/agent.json',
                 'description' => 'Agent orchestration manifest',
             ],
             [
                 'type'        => 'tool',
-                'file'        => 'AI/Tools/tool.json',
+                'file'        => $prefix . 'Tools/tool.json',
                 'description' => 'Tool registration manifest',
             ],
             [
                 'type'        => 'prompt',
-                'file'        => 'AI/Prompts/prompt.json',
+                'file'        => $prefix . 'Prompts/prompt.json',
                 'description' => 'Prompt template manifest',
             ],
             [
                 'type'        => 'workflow',
-                'file'        => 'AI/Workflows/workflow.json',
+                'file'        => $prefix . 'Workflows/workflow.json',
                 'description' => 'Workflow orchestration manifest',
             ],
         ];

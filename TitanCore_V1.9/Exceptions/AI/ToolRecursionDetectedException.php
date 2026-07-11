@@ -2,17 +2,6 @@
 
 namespace Modules\TitanCore\Exceptions\AI;
 
-use RuntimeException;
-
-/**
- * Thrown when a tool re-enters the executor too deeply or recursively.
- */
-class ToolRecursionDetectedException extends RuntimeException
+class ToolRecursionDetectedException extends \TitanSDK\Exceptions\AI\ToolRecursionDetectedException
 {
-    public function __construct(string $toolName, int $depth)
-    {
-        parent::__construct(
-            "Recursive tool execution detected for \"{$toolName}\" at depth {$depth}."
-        );
-    }
 }

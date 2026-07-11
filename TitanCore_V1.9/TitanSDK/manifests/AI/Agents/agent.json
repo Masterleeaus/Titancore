@@ -1,0 +1,93 @@
+{
+  "name": "TitanCoreAgents",
+  "version": "1.9.0",
+  "description": "Built-in AI agents provided by TitanCore. The primary agent is the Orchestrator, which runs the full AIOrchestratorPipeline: guardrail evaluation, RAG retrieval, tool execution, and citation resolution.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+
+  "capabilities": [
+    "chat",
+    "completion",
+    "rag",
+    "knowledge-base",
+    "function-calling",
+    "tool-execution",
+    "guardrails",
+    "citation-resolution",
+    "streaming"
+  ],
+
+  "agents": [
+    {
+      "id": "titan_core_orchestrator",
+      "name": "TitanCore Orchestrator",
+      "description": "The primary AI orchestrator agent for TitanCore. Runs the full AIOrchestratorPipeline: guardrail evaluation, RAG retrieval, tool execution, and citation resolution.",
+      "class": "Modules\\TitanCore\\AI\\AIOrchestratorPipeline",
+      "capabilities": [
+        "chat",
+        "completion",
+        "rag",
+        "knowledge-base",
+        "function-calling",
+        "tool-execution",
+        "guardrails",
+        "citation-resolution",
+        "streaming"
+      ],
+      "assigned_tools": [
+        "titan_core_embedding",
+        "titan_core_vector_search",
+        "calendar_create_booking",
+        "crm_create_lead"
+      ],
+      "prompt_library": [
+        "titan_system_default",
+        "titan_rag_context_injection",
+        "titan_tool_result_formatter"
+      ],
+      "memory": "session",
+      "retrieval": "vector_store",
+      "policies": [
+        "no_pii_retention",
+        "audit_all_tool_calls",
+        "guardrail_check_before_execution",
+        "respect_company_scope"
+      ],
+      "permissions": [
+        "ai.chat",
+        "ai.tools.execute",
+        "ai.tools.audit.read",
+        "ai.rag.query",
+        "ai.vector_store.read"
+      ],
+      "tags": ["orchestrator", "rag", "tool-execution", "core"]
+    }
+  ],
+
+  "dependencies": [
+    "AI/Providers/provider.json",
+    "AI/Tools/tool.json",
+    "AI/Prompts/prompt.json"
+  ],
+
+  "permissions": [
+    "ai.chat",
+    "ai.tools.execute",
+    "ai.tools.audit.read",
+    "ai.rag.query",
+    "ai.vector_store.read"
+  ],
+
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0"
+  },
+
+  "discovery_metadata": {
+    "asset_type": "agent_registry",
+    "registry_key": "titancore.agents",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": ["agents", "orchestrator", "rag", "tool-execution", "core"]
+  }
+}
