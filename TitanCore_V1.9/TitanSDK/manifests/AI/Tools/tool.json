@@ -1,0 +1,167 @@
+{
+  "name": "TitanCoreTools",
+  "version": "1.9.0",
+  "description": "Built-in AI tools provided by TitanCore. Includes embedding generation, vector search, text embedding, and domain-specific tools (CRM, Calendar) exposed through the tool execution pipeline.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+
+  "capabilities": [
+    "embeddings",
+    "vector-store",
+    "rag",
+    "function-calling",
+    "tool-execution"
+  ],
+
+  "tools": [
+    {
+      "id": "titan_core_embedding",
+      "name": "TitanCore Embedding",
+      "description": "Generates a vector embedding for the provided text using the configured embedding provider (OpenAI, local, etc.).",
+      "class": "Modules\\TitanCore\\AI\\Providers\\OpenAiEmbeddingProvider",
+      "risk_class": "read",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "The text to embed."
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": false,
+          "description": "Override embedding model (defaults to config value).",
+          "default": "text-embedding-3-small"
+        }
+      ],
+      "permissions": ["ai.embeddings"],
+      "tags": ["embeddings", "vector", "core"]
+    },
+    {
+      "id": "titan_core_vector_search",
+      "name": "TitanCore Vector Search",
+      "description": "Performs a semantic similarity search against the configured vector store. Returns top-k matching document chunks with relevance scores.",
+      "class": "Modules\\TitanCore\\AI\\VectorStore\\VectorStoreFactory",
+      "risk_class": "read",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "The natural-language query to search for."
+        },
+        {
+          "name": "top_k",
+          "type": "integer",
+          "required": false,
+          "description": "Number of results to return.",
+          "default": 5
+        },
+        {
+          "name": "namespace",
+          "type": "string",
+          "required": false,
+          "description": "Vector store namespace / collection to search within."
+        }
+      ],
+      "permissions": ["ai.vector_store.read", "ai.rag.query"],
+      "tags": ["vector-search", "rag", "retrieval", "core"]
+    },
+    {
+      "id": "calendar_create_booking",
+      "name": "Calendar Create Booking",
+      "description": "Creates a calendar booking or appointment entry on behalf of the current user.",
+      "class": "Modules\\TitanCore\\Tools\\CalendarCreateBookingTool",
+      "risk_class": "write",
+      "parameters": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "Title / subject of the booking."
+        },
+        {
+          "name": "start_at",
+          "type": "string",
+          "required": true,
+          "description": "ISO 8601 start datetime (e.g. 2025-01-15T10:00:00Z)."
+        },
+        {
+          "name": "end_at",
+          "type": "string",
+          "required": true,
+          "description": "ISO 8601 end datetime."
+        },
+        {
+          "name": "attendee_email",
+          "type": "string",
+          "required": false,
+          "description": "Email address of the attendee to invite."
+        }
+      ],
+      "permissions": ["ai.tools.execute"],
+      "tags": ["calendar", "booking", "write"]
+    },
+    {
+      "id": "crm_create_lead",
+      "name": "CRM Create Lead",
+      "description": "Creates a new lead record in the connected CRM module.",
+      "class": "Modules\\TitanCore\\Tools\\CrmCreateLeadTool",
+      "risk_class": "write",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Full name of the lead."
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "description": "Email address of the lead."
+        },
+        {
+          "name": "company",
+          "type": "string",
+          "required": false,
+          "description": "Company name associated with the lead."
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": false,
+          "description": "Lead source (e.g. website, chat, api).",
+          "default": "ai"
+        }
+      ],
+      "permissions": ["ai.tools.execute"],
+      "tags": ["crm", "lead", "write"]
+    }
+  ],
+
+  "dependencies": [
+    "AI/Providers/provider.json"
+  ],
+
+  "permissions": [
+    "ai.tools.execute",
+    "ai.tools.audit.read",
+    "ai.embeddings",
+    "ai.vector_store.read"
+  ],
+
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0"
+  },
+
+  "discovery_metadata": {
+    "asset_type": "tool_registry",
+    "registry_key": "titancore.tools",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": ["tools", "embedding", "vector-search", "core"]
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "name": "TitanCorePrompts",
+  "version": "1.9.0",
+  "description": "Curated system and helper prompts provided by TitanCore. Used by the orchestrator agent, RAG pipeline, and tool result formatting.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+  "owner": "TitanCore",
+
+  "prompts": [
+    {
+      "id": "titan_system_default",
+      "name": "Titan Default System Prompt",
+      "category": "system",
+      "description": "Default system prompt injected into every TitanCore orchestrator conversation. Sets assistant persona, safety boundaries, and output format guidelines.",
+      "variables": [
+        {
+          "name": "company_name",
+          "type": "string",
+          "required": false,
+          "description": "The authenticated user's company name for personalisation."
+        },
+        {
+          "name": "current_date",
+          "type": "string",
+          "required": false,
+          "description": "ISO 8601 date injected at runtime."
+        }
+      ],
+      "parameters": {
+        "max_tokens": 500,
+        "temperature": 0.2
+      },
+      "validation": {
+        "required_variables": [],
+        "max_length": 2000
+      },
+      "usage": "Injected automatically as the first message (role: system) in every orchestrator chat request.",
+      "tags": ["system", "core", "orchestrator"]
+    },
+    {
+      "id": "titan_rag_context_injection",
+      "name": "Titan RAG Context Injection",
+      "category": "rag",
+      "description": "Wraps retrieved document chunks into a structured context block that is prepended to the user's message before LLM completion.",
+      "variables": [
+        {
+          "name": "retrieved_chunks",
+          "type": "array",
+          "required": true,
+          "description": "Array of retrieved document chunks with text and source metadata."
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "The original user query being answered."
+        }
+      ],
+      "parameters": {
+        "max_tokens": 1500,
+        "temperature": 0.1
+      },
+      "validation": {
+        "required_variables": ["retrieved_chunks", "query"],
+        "max_length": 8000
+      },
+      "usage": "Applied by AIOrchestratorPipeline after the retrieval stage, before tool execution.",
+      "tags": ["rag", "context", "retrieval", "core"]
+    },
+    {
+      "id": "titan_tool_result_formatter",
+      "name": "Titan Tool Result Formatter",
+      "category": "tool",
+      "description": "Formats raw tool execution results into a human-readable, citation-aware response for the end user.",
+      "variables": [
+        {
+          "name": "tool_name",
+          "type": "string",
+          "required": true,
+          "description": "The name of the tool that was executed."
+        },
+        {
+          "name": "tool_result",
+          "type": "object",
+          "required": true,
+          "description": "The raw result array returned by the tool handler."
+        },
+        {
+          "name": "citations",
+          "type": "array",
+          "required": false,
+          "description": "Optional citation objects resolved from retrieved documents."
+        }
+      ],
+      "parameters": {
+        "max_tokens": 800,
+        "temperature": 0.3
+      },
+      "validation": {
+        "required_variables": ["tool_name", "tool_result"],
+        "max_length": 4000
+      },
+      "usage": "Applied by AIOrchestratorPipeline after the tool execution stage to format the final user-facing response.",
+      "tags": ["tool", "formatting", "citation", "core"]
+    }
+  ],
+
+  "dependencies": [],
+
+  "permissions": [
+    "ai.chat",
+    "ai.rag.query"
+  ],
+
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0"
+  },
+
+  "discovery_metadata": {
+    "asset_type": "prompt_library",
+    "registry_key": "titancore.prompts",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": ["prompts", "system", "rag", "core"]
+  }
+}

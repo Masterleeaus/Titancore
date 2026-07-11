@@ -2,9 +2,6 @@
 
 namespace Modules\TitanCore\Contracts\AI;
 
-interface ClientInterface
+interface ClientInterface extends \TitanSDK\Contracts\AI\ClientInterface
 {
-    public function chat(array $messages, array $options = []): array;
-
-    public function embed(string $input, array $options = []): array;
 }
