@@ -10,10 +10,14 @@ use Modules\TitanCore\Http\Controllers\Api\TitanAiProxyController;
 use Modules\TitanCore\Http\Controllers\Api\ToolsApiController;
 use Modules\TitanCore\Http\Controllers\HealthController;
 use Modules\TitanCore\Http\Controllers\Api\V1\AgentsController;
+use Modules\TitanCore\Http\Controllers\Api\V1\ApiKeyController;
+use Modules\TitanCore\Http\Controllers\Api\V1\AuditController;
 use Modules\TitanCore\Http\Controllers\Api\V1\CompatibilityController;
 use Modules\TitanCore\Http\Controllers\Api\V1\DiagnosticsController;
 use Modules\TitanCore\Http\Controllers\Api\V1\DiscoveryController;
 use Modules\TitanCore\Http\Controllers\Api\V1\KnowledgeController;
+use Modules\TitanCore\Http\Controllers\Api\V1\LogsController;
+use Modules\TitanCore\Http\Controllers\Api\V1\MaintenanceController;
 use Modules\TitanCore\Http\Controllers\Api\V1\MarketplaceController;
 use Modules\TitanCore\Http\Controllers\Api\V1\ModulesController;
 use Modules\TitanCore\Http\Controllers\Api\V1\PlatformController;
@@ -268,5 +272,36 @@ Route::prefix('v1')
             Route::get('/manifests',    [SdkController::class, 'manifests'])->name('manifests');
             Route::get('/version',      [SdkController::class, 'version'])->name('version');
             Route::get('/capabilities', [SdkController::class, 'capabilities'])->name('capabilities');
+        });
+
+        // ── Phase 17: API Key Management ──────────────────────────────────
+        Route::prefix('api-keys')->as('api-keys.')->group(function () {
+            Route::get('/',       [ApiKeyController::class, 'index'])->name('index');
+            Route::post('/',      [ApiKeyController::class, 'store'])->name('store');
+            Route::get('/{id}',   [ApiKeyController::class, 'show'])->name('show');
+            Route::put('/{id}',   [ApiKeyController::class, 'update'])->name('update');
+            Route::delete('/{id}',[ApiKeyController::class, 'revoke'])->name('revoke');
+        });
+
+        // ── Phase 18: Logs ────────────────────────────────────────────────
+        Route::prefix('logs')->as('logs.')->group(function () {
+            Route::get('/',              [LogsController::class, 'index'])->name('index');
+            Route::get('/app',           [LogsController::class, 'app'])->name('app');
+            Route::get('/platform',      [LogsController::class, 'platform'])->name('platform');
+            Route::get('/{filename}',    [LogsController::class, 'show'])->name('show');
+        });
+
+        // ── Phase 19: Audit Trail ─────────────────────────────────────────
+        Route::prefix('audit')->as('audit.')->group(function () {
+            Route::get('/',        [AuditController::class, 'index'])->name('index');
+            Route::get('/tools',   [AuditController::class, 'tools'])->name('tools');
+            Route::get('/export',  [AuditController::class, 'export'])->name('export');
+        });
+
+        // ── Phase 20: Maintenance ─────────────────────────────────────────
+        Route::prefix('maintenance')->as('maintenance.')->group(function () {
+            Route::get('/',         [MaintenanceController::class, 'index'])->name('index');
+            Route::post('/enable',  [MaintenanceController::class, 'enable'])->name('enable');
+            Route::post('/disable', [MaintenanceController::class, 'disable'])->name('disable');
         });
     });
