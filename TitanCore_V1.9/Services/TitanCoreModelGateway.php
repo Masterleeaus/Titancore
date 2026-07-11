@@ -240,9 +240,10 @@ class TitanCoreModelGateway
             }
         }
 
-        throw new \RuntimeException(
-            sprintf('TitanCore requires [%s] to be resolved through the container or injected explicitly.', TitanCoreAiProvider::class),
-        );
+        throw new \RuntimeException(sprintf(
+            'TitanCore could not resolve [%s] for proxy requests because no container was available and no provider was injected.',
+            TitanCoreAiProvider::class,
+        ));
     }
 
     // -------------------------------------------------------------------------

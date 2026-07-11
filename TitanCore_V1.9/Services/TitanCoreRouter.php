@@ -31,7 +31,7 @@ class TitanCoreRouter
         }
 
         $baseUrl = (string) Arr::get($providerConfig, 'base_url', '');
-        $apiKey = $this->resolveProviderKey((string) Arr::get($providerConfig, 'api_key', ''));
+        $apiKey = $this->resolveTitanAiKey((string) Arr::get($providerConfig, 'api_key', ''));
 
         if (!$baseUrl) {
             return ['ok' => false, 'status' => 422, 'body' => ['error' => 'Titan AI provider not configured (base_url)']];
@@ -67,7 +67,7 @@ class TitanCoreRouter
             'provider' => 'titanai',
             'company_id' => $this->resolveCompanyIdFromContext() ?: 1,
             'user_id' => Auth::check() ? Auth::id() : null,
-            'feature' => (string) (\Illuminate\Support\Arr::get($request, 'tool') ?: 'proxy'),
+            'feature' => $this->resolveFeatureName($request),
         ]);
 
         try {
@@ -130,9 +130,9 @@ class TitanCoreRouter
     }
 
     /**
-     * Get the configured provider API key using Titan AI tenant resolution + fallback rules.
+     * Get Titan AI API key with tenant resolution + fallback rules.
      */
-    protected function resolveProviderKey(string $configFallbackKey = ''): string
+    protected function resolveTitanAiKey(string $configFallbackKey = ''): string
     {
         $companyId = $this->resolveCompanyIdFromContext();
 
@@ -150,6 +150,11 @@ class TitanCoreRouter
         }
 
         return (string) ($key ?: '');
+    }
+
+    protected function resolveFeatureName(array $request): string
+    {
+        return (string) (Arr::get($request, 'tool') ?: 'proxy');
     }
 
     protected function lookupKeyForCompany(?int $companyId): ?string
