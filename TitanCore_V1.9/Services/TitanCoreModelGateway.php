@@ -34,8 +34,8 @@ class TitanCoreModelGateway
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
     ) {
-        $this->chatFailoverState = (object) ['failureCounts' => [], 'cooldownUntil' => []];
-        $this->embeddingFailoverState = (object) ['failureCounts' => [], 'cooldownUntil' => []];
+        $this->chatFailoverState = ProviderFailoverChain::newStateStore();
+        $this->embeddingFailoverState = ProviderFailoverChain::newStateStore();
     }
 
     /**

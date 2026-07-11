@@ -37,7 +37,12 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
      */
     public function __construct(protected array $providers = [])
     {
-        $this->stateStore = (object) [
+        $this->stateStore = self::newStateStore();
+    }
+
+    public static function newStateStore(): object
+    {
+        return (object) [
             'failureCounts' => [],
             'cooldownUntil' => [],
         ];
@@ -311,7 +316,8 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             return;
         }
 
-        $delayMs = $this->backoffBaseDelayMs * (2 ** max(0, $failureCount - 1));
+        $exponent = min(max(0, $failureCount - 1), 10);
+        $delayMs = $this->backoffBaseDelayMs * (2 ** $exponent);
 
         if ($this->backoffMaxDelayMs > 0) {
             $delayMs = min($delayMs, $this->backoffMaxDelayMs);
