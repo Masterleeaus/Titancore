@@ -1,0 +1,42 @@
+<?php
+
+namespace {{ Namespace }}\Http\Controllers\Api\V1;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Routing\Controller;
+use {{ Namespace }}\Http\Requests\{{ Name }}Request;
+use {{ Namespace }}\Http\Resources\{{ Name }}Resource;
+
+class {{ Name }}Controller extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        // TODO: implement index
+        return {{ Name }}Resource::collection([]);
+    }
+
+    public function store({{ Name }}Request $request): {{ Name }}Resource
+    {
+        // TODO: implement store
+        return new {{ Name }}Resource([]);
+    }
+
+    public function show(int $id): {{ Name }}Resource
+    {
+        // TODO: implement show
+        return new {{ Name }}Resource([]);
+    }
+
+    public function update({{ Name }}Request $request, int $id): {{ Name }}Resource
+    {
+        // TODO: implement update
+        return new {{ Name }}Resource([]);
+    }
+
+    public function destroy(int $id): \Illuminate\Http\Response
+    {
+        // TODO: implement destroy
+        return response()->noContent();
+    }
+}

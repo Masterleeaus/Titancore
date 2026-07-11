@@ -1,0 +1,16 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{ ModuleName }} Web Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['web', 'auth'])
+    ->prefix('{{ slug }}')
+    ->name('{{ slug }}.')
+    ->group(function () {
+        // Define {{ ModuleName }} web routes here
+    });

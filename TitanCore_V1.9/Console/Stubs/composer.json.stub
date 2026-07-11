@@ -1,0 +1,21 @@
+{
+    "name": "modules/{{ slug }}",
+    "description": "{{ ModuleName }} Titan module.",
+    "type": "titan-module",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\{{ ModuleName }}\\": ""
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\{{ ModuleName }}\\Providers\\{{ ModuleName }}ServiceProvider"
+            ]
+        }
+    }
+}

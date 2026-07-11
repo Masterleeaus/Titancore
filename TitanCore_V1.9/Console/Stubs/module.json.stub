@@ -1,0 +1,19 @@
+{
+    "name": "{{ ModuleName }}",
+    "alias": "{{ slug }}",
+    "description": "{{ ModuleName }} Titan module.",
+    "version": "1.0.0",
+    "requires_php": "^8.2",
+    "requires_laravel": "^11.0",
+    "keywords": [
+        "{{ slug }}"
+    ],
+    "priority": 100,
+    "providers": [
+        "Modules\\{{ ModuleName }}\\Providers\\{{ ModuleName }}ServiceProvider"
+    ],
+    "requires": {
+        "TitanCore": "^1.0"
+    },
+    "active": 1
+}

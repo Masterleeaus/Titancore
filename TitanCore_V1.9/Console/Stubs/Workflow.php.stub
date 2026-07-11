@@ -1,0 +1,27 @@
+<?php
+
+namespace {{ Namespace }}\Workflows;
+
+/**
+ * {{ Name }} Titan Workflow.
+ *
+ * Workflows orchestrate multi-step processes. They must not call AI providers
+ * directly — delegate all AI work to tools or agents via TitanCore.
+ */
+class {{ Name }}Workflow
+{
+    /**
+     * Execute the workflow.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function execute(array $payload): array
+    {
+        // TODO: implement {{ Name }} workflow steps
+        return [
+            'workflow' => '{{ name }}',
+            'status'   => 'completed',
+        ];
+    }
+}

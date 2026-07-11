@@ -1,0 +1,31 @@
+<?php
+
+namespace {{ Namespace }}\Prompts;
+
+/**
+ * {{ Name }} Prompt.
+ *
+ * Prompts are pure value objects — they contain a template string and
+ * a render method. They must not call providers directly.
+ */
+class {{ Name }}Prompt
+{
+    /**
+     * Render the prompt with the provided variables.
+     *
+     * @param  array<string, mixed>  $vars
+     */
+    public function render(array $vars = []): string
+    {
+        return $this->template($vars);
+    }
+
+    /**
+     * @param  array<string, mixed>  $vars
+     */
+    private function template(array $vars): string
+    {
+        // TODO: implement {{ Name }} prompt template
+        return '';
+    }
+}

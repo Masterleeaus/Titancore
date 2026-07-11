@@ -1,0 +1,39 @@
+# {{ ModuleName }}
+
+> Titan module for {{ ModuleName }}.
+
+## Installation
+
+This module is auto-discovered by TitanCore. Enable it with:
+
+```bash
+php artisan modules:enable {{ ModuleName }}
+```
+
+## Architecture
+
+This module integrates with TitanCore exclusively through the public SDK, contracts, and manifests.
+It does not import internal TitanCore classes.
+
+## Commands
+
+```bash
+# Validate manifests
+php artisan titan:validate-module {{ ModuleName }}
+
+# Run module health checks
+php artisan modules:health {{ ModuleName }}
+
+# Inspect dependency tree
+php artisan modules:deps {{ ModuleName }}
+```
+
+## Tests
+
+```bash
+php artisan test --filter={{ ModuleName }}
+```
+
+## License
+
+Proprietary — {{ Year }}

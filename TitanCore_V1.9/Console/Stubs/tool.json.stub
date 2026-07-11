@@ -1,0 +1,14 @@
+{
+    "id": "{{ name }}",
+    "description": "{{ Name }} tool.",
+    "input_schema": {
+        "company_id": {
+            "type": "integer",
+            "description": "The company / organisation identifier.",
+            "required": true
+        }
+    },
+    "risk_class": "read",
+    "enabled": true,
+    "version": "1.0.0"
+}

@@ -1,0 +1,27 @@
+<?php
+
+namespace {{ Namespace }}\Tools;
+
+/**
+ * {{ Name }} Titan Tool.
+ *
+ * Register this tool in your module's ai.manifest.json under the `tools` key.
+ * All AI execution must pass through TitanCoreModelGateway — never call
+ * providers directly from this class.
+ */
+class {{ Name }}Tool
+{
+    /**
+     * Execute the tool.
+     *
+     * @param  array<string, mixed>  $input  Validated input parameters.
+     * @return array<string, mixed>
+     */
+    public function execute(array $input): array
+    {
+        // TODO: implement {{ Name }} tool logic
+        return [
+            'status' => 'ok',
+        ];
+    }
+}
