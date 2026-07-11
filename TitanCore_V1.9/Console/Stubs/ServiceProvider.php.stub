@@ -1,0 +1,39 @@
+<?php
+
+namespace {{ Namespace }}\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Route;
+
+class {{ ModuleName }}ServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../Config/config.php', '{{ slug }}');
+    }
+
+    public function boot(): void
+    {
+        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', '{{ slug }}');
+
+        if (is_dir(__DIR__.'/../Database/Migrations')) {
+            $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        }
+
+        $web = __DIR__.'/../Routes/web.php';
+        if (file_exists($web)) {
+            Route::middleware('web')->group($web);
+        }
+
+        $api = __DIR__.'/../Routes/api.php';
+        if (file_exists($api)) {
+            Route::middleware('api')->prefix('api')->group($api);
+        }
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../Config/config.php' => config_path('{{ slug }}.php'),
+            ], '{{ slug }}-config');
+        }
+    }
+}

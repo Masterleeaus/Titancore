@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{ ModuleName }} API Routes
+|--------------------------------------------------------------------------
+|
+| All routes are prefixed with /api/v1/{{ slug }}
+|
+*/
+
+Route::prefix('v1/{{ slug }}')
+    ->middleware(['auth:sanctum'])
+    ->name('{{ slug }}.')
+    ->group(function () {
+        // Define {{ ModuleName }} API routes here
+    });

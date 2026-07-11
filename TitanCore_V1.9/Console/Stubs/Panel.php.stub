@@ -1,0 +1,14 @@
+<?php
+
+namespace {{ Namespace }}\Filament\Pages;
+
+use Filament\Pages\Page;
+
+class {{ Name }}Panel extends Page
+{
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    protected static string $view = '{{ slug }}::filament.pages.{{ name }}';
+
+    protected static ?string $title = '{{ Name }}';
+}

@@ -1,0 +1,12 @@
+<?php
+
+namespace {{ Namespace }}\Filament\Widgets;
+
+use Filament\Widgets\Widget;
+
+class {{ Name }}Widget extends Widget
+{
+    protected static string $view = '{{ slug }}::filament.widgets.{{ name }}';
+
+    protected int|string|array $columnSpan = 'full';
+}

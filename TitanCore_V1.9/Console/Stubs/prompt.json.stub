@@ -1,0 +1,8 @@
+{
+    "id": "{{ name }}",
+    "name": "{{ Name }} Prompt",
+    "description": "{{ Name }} prompt template.",
+    "class": "{{ Namespace }}\\Prompts\\{{ Name }}Prompt",
+    "enabled": true,
+    "version": "1.0.0"
+}

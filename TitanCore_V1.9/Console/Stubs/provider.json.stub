@@ -1,0 +1,10 @@
+{
+    "id": "{{ name }}",
+    "name": "{{ Name }}",
+    "description": "{{ Name }} AI provider.",
+    "class": "{{ Namespace }}\\Providers\\{{ Name }}Provider",
+    "capabilities": ["chat"],
+    "health_check": true,
+    "enabled": true,
+    "version": "1.0.0"
+}

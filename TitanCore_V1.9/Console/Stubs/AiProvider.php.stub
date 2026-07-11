@@ -1,0 +1,36 @@
+<?php
+
+namespace {{ Namespace }}\Providers;
+
+/**
+ * {{ Name }} AI Provider.
+ *
+ * Implements a TitanCore provider contract so that all AI execution is routed
+ * through TitanCoreModelGateway. Never call the upstream API directly from
+ * application code — always go through the gateway.
+ */
+class {{ Name }}Provider
+{
+    public function __construct(
+        private readonly array $config = [],
+    ) {}
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function chat(array $payload): array
+    {
+        // TODO: implement {{ Name }} provider chat completion
+        throw new \RuntimeException('{{ Name }}Provider::chat() not implemented.');
+    }
+
+    /**
+     * Check that the provider endpoint is reachable and the credentials valid.
+     */
+    public function healthCheck(): bool
+    {
+        // TODO: implement health check
+        return false;
+    }
+}

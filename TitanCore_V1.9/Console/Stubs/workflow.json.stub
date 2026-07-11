@@ -1,0 +1,11 @@
+{
+    "id": "{{ name }}",
+    "name": "{{ Name }} Workflow",
+    "description": "{{ Name }} workflow.",
+    "class": "{{ Namespace }}\\Workflows\\{{ Name }}Workflow",
+    "checkpoints": false,
+    "retries": 0,
+    "telemetry": true,
+    "enabled": true,
+    "version": "1.0.0"
+}

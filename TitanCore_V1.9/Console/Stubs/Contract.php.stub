@@ -1,0 +1,8 @@
+<?php
+
+namespace {{ Namespace }}\Contracts;
+
+interface {{ Name }}
+{
+    // TODO: define {{ Name }} contract methods
+}

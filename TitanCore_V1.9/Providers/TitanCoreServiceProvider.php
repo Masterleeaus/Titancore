@@ -23,6 +23,24 @@ use Modules\TitanCore\Console\Commands\ModulesUpgradeCommand;
 use Modules\TitanCore\Console\Commands\SyncTitanDocsKnowledgeCommand;
 use Modules\TitanCore\Console\Commands\ValidateManifestsCommand;
 use Modules\TitanCore\Console\Commands\VerifyManifestCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeAgentCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeApiCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeContractCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeDtoCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeEventCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeModuleCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakePanelCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakePluginCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakePolicyCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakePromptCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeProviderCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeRegistryCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeToolCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeWidgetCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MakeWorkflowCommand;
+use Modules\TitanCore\Console\Commands\Mdk\MigrateSdkCommand;
+use Modules\TitanCore\Console\Commands\Mdk\TitanDoctorCommand;
+use Modules\TitanCore\Console\Commands\Mdk\ValidateModuleCommand;
 use Modules\TitanCore\Console\SyncTitanEchoAssistCommand;
 use Modules\TitanCore\Services\Providers\TitanAiProvider;
 use Modules\TitanCore\Services\TitanAiClient;
@@ -81,6 +99,25 @@ class TitanCoreServiceProvider extends ServiceProvider
                 ValidateManifestsCommand::class,
                 GenerateManifestCommand::class,
                 VerifyManifestCommand::class,
+                // MDK — Module Developer Kit
+                MakeModuleCommand::class,
+                MakePluginCommand::class,
+                MakeProviderCommand::class,
+                MakeToolCommand::class,
+                MakeAgentCommand::class,
+                MakeWorkflowCommand::class,
+                MakePromptCommand::class,
+                MakeWidgetCommand::class,
+                MakePanelCommand::class,
+                MakeApiCommand::class,
+                MakeEventCommand::class,
+                MakeContractCommand::class,
+                MakeDtoCommand::class,
+                MakePolicyCommand::class,
+                MakeRegistryCommand::class,
+                TitanDoctorCommand::class,
+                ValidateModuleCommand::class,
+                MigrateSdkCommand::class,
             ]);
         }
 

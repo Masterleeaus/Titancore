@@ -1,0 +1,11 @@
+{
+    "id": "{{ name }}",
+    "name": "{{ Name }} Agent",
+    "description": "{{ Name }} agent.",
+    "agent_class": "{{ Namespace }}\\Agents\\{{ Name }}Agent",
+    "planner": "react",
+    "tools": [],
+    "memory": false,
+    "enabled": true,
+    "version": "1.0.0"
+}

@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ Namespace }}\Plugins;
+
+/**
+ * {{ Name }} Titan Plugin.
+ *
+ * Plugins extend TitanCore behaviour through the public SDK contracts.
+ * They must not import TitanCore internal classes.
+ */
+class {{ Name }}Plugin
+{
+    public function register(): void
+    {
+        // TODO: register {{ Name }} plugin bindings
+    }
+
+    public function boot(): void
+    {
+        // TODO: boot {{ Name }} plugin
+    }
+}
