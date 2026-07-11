@@ -107,10 +107,10 @@ class LogsController extends Controller
         $path = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
 
         // Ensure path stays within the expected directory
-        $realDir  = realpath($dir) ?: $dir;
+        $realDir  = realpath($dir);
         $realPath = realpath($path);
 
-        if ($realPath === false || ! str_starts_with($realPath, $realDir . DIRECTORY_SEPARATOR)) {
+        if ($realDir === false || $realPath === false || ! str_starts_with($realPath, $realDir . DIRECTORY_SEPARATOR)) {
             return response()->json(['error' => 'Log file not found or access denied'], 404);
         }
 

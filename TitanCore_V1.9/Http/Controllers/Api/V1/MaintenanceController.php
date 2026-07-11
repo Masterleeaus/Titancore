@@ -5,6 +5,7 @@ namespace Modules\TitanCore\Http\Controllers\Api\V1;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Artisan;
 
 /**
  * Maintenance API — /api/v1/maintenance/*
@@ -74,7 +75,7 @@ class MaintenanceController extends Controller
         }
 
         try {
-            \Illuminate\Support\Facades\Artisan::call('down', $args);
+            Artisan::call('down', $args);
 
             return response()->json([
                 'ok'          => true,
@@ -108,7 +109,7 @@ class MaintenanceController extends Controller
         }
 
         try {
-            \Illuminate\Support\Facades\Artisan::call('up');
+            Artisan::call('up');
 
             return response()->json([
                 'ok'          => true,

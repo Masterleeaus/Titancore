@@ -5,6 +5,7 @@ namespace Modules\TitanCore\Http\Controllers\Api\V1;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -119,10 +120,17 @@ class AuditController extends Controller
         $to    = $request->query('to', now()->toDateString());
         $rows  = [];
 
+        try {
+            $fromDt = Carbon::parse($from)->startOfDay();
+            $toDt   = Carbon::parse($to)->endOfDay();
+        } catch (\Throwable) {
+            return response()->json(['error' => 'Invalid date format. Use YYYY-MM-DD.'], 422);
+        }
+
         if (Schema::hasTable(self::TOOL_LOG_TABLE)) {
             try {
                 $rows = DB::table(self::TOOL_LOG_TABLE)
-                    ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                    ->whereBetween('created_at', [$fromDt, $toDt])
                     ->orderBy('created_at')
                     ->get()
                     ->toArray();
