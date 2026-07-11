@@ -37,9 +37,9 @@ class PlatformAdministrationFramework
         return (array) ($this->panel($panel)['navigation'] ?? []);
     }
 
-    public function globalSearch(string $panel): array
+    public function globalSearch(string $panelKey): array
     {
-        return (array) ($this->panel($panel)['global_search'] ?? []);
+        return (array) ($this->panel($panelKey)['global_search'] ?? []);
     }
 
     public function panelSwitcher(mixed $user): array
@@ -66,9 +66,9 @@ class PlatformAdministrationFramework
         }));
     }
 
-    public function dashboardWidgets(string $dashboard): array
+    public function dashboardWidgets(string $dashboardKey): array
     {
-        return (array) ($this->framework['dashboard_framework']['dashboards'][$dashboard]['widgets'] ?? []);
+        return (array) ($this->framework['dashboard_framework']['dashboards'][$dashboardKey]['widgets'] ?? []);
     }
 
     private function can(mixed $user, ?string $permission): bool
