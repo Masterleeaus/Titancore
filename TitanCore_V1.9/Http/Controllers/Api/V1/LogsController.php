@@ -162,7 +162,7 @@ class LogsController extends Controller
 
         $allLines = explode("\n", $buffer);
         // Remove empty trailing element if file ends with newline
-        if (end($allLines) === '') {
+        if (! empty($allLines) && $allLines[array_key_last($allLines)] === '') {
             array_pop($allLines);
         }
 

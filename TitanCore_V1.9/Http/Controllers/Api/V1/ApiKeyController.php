@@ -165,14 +165,21 @@ class ApiKeyController extends Controller
 
         $payload = ['updated_at' => now()];
 
-        if (isset($validated['name']))        $payload['name']        = $validated['name'];
-        if (array_key_exists('scopes', $validated))
+        if (isset($validated['name'])) {
+            $payload['name'] = $validated['name'];
+        }
+        if (array_key_exists('scopes', $validated)) {
             $payload['scopes'] = $validated['scopes'] !== null ? json_encode($validated['scopes']) : null;
-        if (array_key_exists('description', $validated))
+        }
+        if (array_key_exists('description', $validated)) {
             $payload['description'] = $validated['description'];
-        if (isset($validated['active']))      $payload['active']      = $validated['active'];
-        if (array_key_exists('expires_at', $validated))
+        }
+        if (isset($validated['active'])) {
+            $payload['active'] = $validated['active'];
+        }
+        if (array_key_exists('expires_at', $validated)) {
             $payload['expires_at'] = $validated['expires_at'];
+        }
 
         DB::table(self::TABLE)->where('id', $id)->update($payload);
 
@@ -218,7 +225,7 @@ class ApiKeyController extends Controller
             'id'          => $row->id,
             'name'        => $row->name,
             'key_prefix'  => $row->key_prefix,
-            'scopes'      => json_decode($row->scopes ?? '[]', true) ?: [],
+            'scopes'      => json_decode($row->scopes ?? '[]', true) ?? [],
             'description' => $row->description,
             'active'      => (bool) $row->active,
             'last_used_at'=> $row->last_used_at,
