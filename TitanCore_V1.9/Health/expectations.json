@@ -1,0 +1,8 @@
+{
+    "provider": true,
+    "filament": true,
+    "translations": true,
+    "routes": true,
+    "migrations": true,
+    "manifest": true
+}

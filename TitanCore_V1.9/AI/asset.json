@@ -1,0 +1,131 @@
+{
+  "name": "TitanCoreAI",
+  "version": "1.9.0",
+  "description": "Core AI infrastructure subsystem for the Titan ecosystem. Provides multi-provider chat/embedding, RAG pipelines, tool execution, vector stores, manifest validation, and capability indexing for TitanZero, TitanEchoAssist, TitanEchoVoice, and the Aitools platform manager.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+  "namespace": "Modules\\TitanCore\\AI",
+  "capabilities": [
+    "chat",
+    "completion",
+    "streaming",
+    "embeddings",
+    "reranking",
+    "rag",
+    "knowledge-base",
+    "vector-store",
+    "function-calling",
+    "tool-execution",
+    "guardrails",
+    "moderation",
+    "image-generation",
+    "transcription",
+    "model-routing",
+    "provider-failover",
+    "usage-tracking",
+    "audit-logging",
+    "manifest-validation",
+    "capability-indexing"
+  ],
+  "exported_assets": {
+    "providers": [
+      "AI/Providers/provider.json"
+    ],
+    "agents": [
+      "AI/Agents/agent.json"
+    ],
+    "tools": [
+      "AI/Tools/tool.json"
+    ],
+    "prompts": [
+      "AI/Prompts/prompt.json"
+    ],
+    "workflows": [
+      "AI/Workflows/workflow.json"
+    ]
+  },
+  "dependencies": {
+    "php": "^8.2",
+    "laravel": "^10.0 || ^11.0",
+    "guzzlehttp/guzzle": "^7.9",
+    "illuminate/support": "*",
+    "illuminate/http": "*"
+  },
+  "optional_dependencies": {
+    "pgvector": "postgres extension for pgvector store",
+    "pinecone": "Pinecone SDK for PineconeStore",
+    "qdrant": "Qdrant client for QdrantStore",
+    "meilisearch": "Meilisearch Scout driver for MeilisearchScoutBridge",
+    "laravel-scout": "^10.0 for vector search bridges"
+  },
+  "permissions": [
+    "ai.chat",
+    "ai.embeddings",
+    "ai.tools.execute",
+    "ai.tools.audit.read",
+    "ai.vector_store.read",
+    "ai.vector_store.write",
+    "ai.rag.query",
+    "ai.providers.health",
+    "ai.manifests.validate",
+    "ai.usage.read"
+  ],
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0",
+    "laravel_min": "10.0.0",
+    "laravel_max": "11.x",
+    "tested_on": [
+      "10.48",
+      "11.9"
+    ]
+  },
+  "discovery_metadata": {
+    "asset_type": "ai_subsystem",
+    "registry_key": "titancore.ai",
+    "discovery_path": "AI/",
+    "manifest_files": [
+      "AI/asset.json",
+      "AI/Providers/provider.json",
+      "AI/Agents/agent.json",
+      "AI/Tools/tool.json",
+      "AI/Prompts/prompt.json",
+      "AI/Workflows/workflow.json"
+    ],
+    "platform_manager": {
+      "auto_register": true,
+      "capability_index": true,
+      "health_check": true,
+      "health_endpoint": "/api/v1/platform/health"
+    },
+    "tags": [
+      "ai",
+      "core",
+      "infrastructure",
+      "titan-ecosystem"
+    ]
+  },
+  "consumers": [
+    "TitanZero",
+    "TitanEchoAssist",
+    "TitanEchoVoice",
+    "Aitools"
+  ],
+  "runtime_services": [
+    "ChatService",
+    "CompletionService",
+    "ReasoningService",
+    "PlannerService",
+    "PromptService",
+    "ToolService",
+    "MemoryService",
+    "EmbeddingService",
+    "VectorService",
+    "RetrievalService",
+    "ProviderService",
+    "StreamingService",
+    "TelemetryService",
+    "UsageService",
+    "AuditService"
+  ]
+}

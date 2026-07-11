@@ -1,0 +1,74 @@
+{
+  "counts": {
+    "php": 90,
+    "js_ts": 13,
+    "blade": 0,
+    "md": 0,
+    "yaml": 1,
+    "other": 17,
+    "total": 121
+  },
+  "samples": {
+    "php": [
+      "AICore/database/migrations/2025_08_08_155751_create_ai_request_logs_table.php",
+      "AICore/database/migrations/2025_08_02_024424_create_ai_providers_table.php",
+      "AICore/database/migrations/2025_08_02_024425_create_ai_models_table.php",
+      "AICore/database/migrations/2025_08_08_134759_create_ai_module_configurations_table.php",
+      "AICore/database/migrations/2025_08_02_024426_create_ai_usage_logs_table.php",
+      "AICore/database/seeders/AICorePermissionSeeder.php",
+      "AICore/database/seeders/DefaultAIProvidersSeeder.php",
+      "AICore/database/seeders/AICoreSettingsSeeder.php",
+      "AICore/database/seeders/SampleUsageDataSeeder.php",
+      "AICore/database/seeders/AICoreDatabaseSeeder.php",
+      "AICore/app/Exceptions/AIRateLimitException.php",
+      "AICore/app/Settings/AICoreSettings.php",
+      "AICore/app/Services/AIProviderService.php",
+      "AICore/app/Services/AIUsageTracker.php",
+      "AICore/app/Services/AIRequestService.php",
+      "AICore/app/Services/AIProviderAddonService.php",
+      "AICore/app/Services/AIModuleDetectionService.php",
+      "AICore/app/Http/Controllers/AIRequestLogController.php",
+      "AICore/app/Http/Controllers/AIModelController.php",
+      "AICore/app/Http/Controllers/AIDashboardController.php"
+    ],
+    "js_ts": [
+      "AICore/vite.config.js",
+      "AICore/resources/assets/js/ai-request-logs.js",
+      "AICore/resources/assets/js/aicore-provider-form.js",
+      "AICore/resources/assets/js/aicore-model-form.js",
+      "AICore/resources/assets/js/aicore-provider-details.js",
+      "AICore/resources/assets/js/aicore-usage-analytics.js",
+      "AICore/resources/assets/js/aicore-models.js",
+      "AICore/resources/assets/js/aicore-model-details.js",
+      "AICore/resources/assets/js/aicore-configurations.js",
+      "AICore/resources/assets/js/aicore-dashboard.js",
+      "AICore/resources/assets/js/aicore-providers.js",
+      "AICore/resources/assets/js/app.js",
+      "AICore/resources/assets/js/aicore-module-configuration.js"
+    ],
+    "blade": [],
+    "md": [],
+    "yaml": [
+      "AICore/Docs/openapi.yaml"
+    ],
+    "other": [
+      "AICore/package.json",
+      "AICore/module.json",
+      "AICore/composer.json",
+      "AICore/database/migrations/.gitkeep",
+      "AICore/database/seeders/.gitkeep",
+      "AICore/database/factories/.gitkeep",
+      "AICore/app/Http/Controllers/.gitkeep",
+      "AICore/app/Providers/.gitkeep",
+      "AICore/config/.gitkeep",
+      "AICore/resources/menu/verticalMenu.json",
+      "AICore/resources/views/.gitkeep",
+      "AICore/resources/assets/.gitkeep",
+      "AICore/resources/assets/css/ai-request-logs.css",
+      "AICore/resources/assets/sass/app.scss",
+      "AICore/tests/Unit/.gitkeep",
+      "AICore/tests/Feature/.gitkeep",
+      "AICore/routes/.gitkeep"
+    ]
+  }
+}

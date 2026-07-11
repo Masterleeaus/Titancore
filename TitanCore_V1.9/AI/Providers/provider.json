@@ -1,0 +1,250 @@
+{
+  "name": "TitanCoreProviders",
+  "version": "1.9.0",
+  "description": "All AI provider adapters registered by TitanCore: OpenAI (chat + embeddings), Anthropic, Local/Ollama, TitanAI SaaS proxy, MagicAI proxy, and Null (no-op) providers.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+
+  "capabilities": [
+    "chat",
+    "completion",
+    "streaming",
+    "embeddings",
+    "image-generation",
+    "moderation",
+    "provider-failover",
+    "model-routing",
+    "usage-tracking"
+  ],
+
+  "providers": [
+    {
+      "id": "openai_chat",
+      "name": "OpenAI Chat",
+      "description": "Calls OpenAI /v1/chat/completions. Supports GPT-4o, GPT-4o-mini, GPT-4-turbo, GPT-3.5-turbo and all compatible variants.",
+      "class": "Modules\\TitanCore\\AI\\Providers\\OpenAiChatProvider",
+      "capabilities": ["chat", "completion", "streaming", "function-calling", "moderation"],
+      "models": [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4-turbo",
+        "gpt-4",
+        "gpt-3.5-turbo"
+      ],
+      "authentication": {
+        "type": "bearer_token",
+        "env_key": "OPENAI_API_KEY",
+        "config_path": "titan_model_runtime.providers.openai.api_key"
+      },
+      "rate_limits": {
+        "requests_per_minute": 3500,
+        "tokens_per_minute": 90000
+      },
+      "cost_tracking": {
+        "enabled": true,
+        "pricing_config": "ai.pricing"
+      },
+      "failover": {
+        "supported": true,
+        "fallback_provider": "null_chat"
+      },
+      "health_check": true
+    },
+    {
+      "id": "openai_embedding",
+      "name": "OpenAI Embeddings",
+      "description": "Calls OpenAI /v1/embeddings. Supports text-embedding-3-small, text-embedding-3-large, text-embedding-ada-002.",
+      "class": "Modules\\TitanCore\\AI\\Providers\\OpenAiEmbeddingProvider",
+      "capabilities": ["embeddings"],
+      "models": [
+        "text-embedding-3-small",
+        "text-embedding-3-large",
+        "text-embedding-ada-002"
+      ],
+      "authentication": {
+        "type": "bearer_token",
+        "env_key": "OPENAI_API_KEY",
+        "config_path": "titan_model_runtime.providers.openai.api_key"
+      },
+      "rate_limits": {
+        "requests_per_minute": 3000,
+        "tokens_per_minute": 1000000
+      },
+      "cost_tracking": {
+        "enabled": true,
+        "pricing_config": "ai.pricing"
+      },
+      "failover": {
+        "supported": true,
+        "fallback_provider": "null_embedding"
+      },
+      "health_check": true
+    },
+    {
+      "id": "anthropic_chat",
+      "name": "Anthropic Chat",
+      "description": "Calls Anthropic /v1/messages. Supports Claude 3 Opus, Sonnet, and Haiku.",
+      "class": "Modules\\TitanCore\\AI\\Adapters\\AnthropicClient",
+      "capabilities": ["chat", "completion", "streaming"],
+      "models": [
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+        "claude-3-5-sonnet-20241022"
+      ],
+      "authentication": {
+        "type": "api_key_header",
+        "header": "x-api-key",
+        "env_key": "ANTHROPIC_API_KEY",
+        "config_path": "ai.providers.anthropic.api_key"
+      },
+      "rate_limits": {
+        "requests_per_minute": 1000,
+        "tokens_per_minute": 40000
+      },
+      "cost_tracking": {
+        "enabled": true,
+        "pricing_config": "ai.pricing"
+      },
+      "failover": {
+        "supported": true,
+        "fallback_provider": "null_chat"
+      },
+      "health_check": false
+    },
+    {
+      "id": "local_model",
+      "name": "Local Model Provider",
+      "description": "OpenAI-compatible adapter for local inference servers (Ollama, LM Studio, llama.cpp). Provides both chat and embedding endpoints.",
+      "class": "Modules\\TitanCore\\AI\\Providers\\LocalModelProvider",
+      "capabilities": ["chat", "completion", "embeddings"],
+      "models": ["*"],
+      "authentication": {
+        "type": "none",
+        "note": "No API key required for local servers. Override base_url to point at your local endpoint."
+      },
+      "rate_limits": {
+        "requests_per_minute": null,
+        "note": "Governed by local hardware capacity."
+      },
+      "cost_tracking": {
+        "enabled": false
+      },
+      "failover": {
+        "supported": true,
+        "fallback_provider": "null_chat"
+      },
+      "health_check": true
+    },
+    {
+      "id": "titanai_proxy",
+      "name": "TitanAI SaaS Proxy",
+      "description": "Routes requests through an external TitanAI SaaS backend via HTTP Basic Auth. Path-filtered for security.",
+      "class": "Modules\\TitanCore\\Services\\Providers\\TitanAiProvider",
+      "capabilities": ["chat", "completion", "model-routing"],
+      "models": ["*"],
+      "authentication": {
+        "type": "http_basic",
+        "env_key": "TITAN_titanai_API_KEY",
+        "config_path": "titancore.providers.titanai.api_key"
+      },
+      "rate_limits": {
+        "requests_per_minute": null,
+        "note": "Governed by TitanAI SaaS plan limits."
+      },
+      "cost_tracking": {
+        "enabled": false
+      },
+      "failover": {
+        "supported": false
+      },
+      "health_check": true
+    },
+    {
+      "id": "magicai_proxy",
+      "name": "MagicAI SaaS Proxy",
+      "description": "Routes requests through a MagicAI SaaS backend with path-based safety filtering.",
+      "class": "Modules\\TitanCore\\Services\\Providers\\MagicAiProvider",
+      "capabilities": ["chat", "completion"],
+      "models": ["*"],
+      "authentication": {
+        "type": "http_basic",
+        "env_key": "TITAN_magicai_API_KEY",
+        "config_path": "titancore.providers.magicai.api_key"
+      },
+      "rate_limits": {
+        "requests_per_minute": null
+      },
+      "cost_tracking": {
+        "enabled": false
+      },
+      "failover": {
+        "supported": false
+      },
+      "health_check": true
+    },
+    {
+      "id": "null_chat",
+      "name": "Null Chat Provider",
+      "description": "No-op provider that returns empty responses. Used as a safe fallback when no API key is configured and in test environments.",
+      "class": "Modules\\TitanCore\\AI\\Providers\\NullChatProvider",
+      "capabilities": ["chat"],
+      "models": ["null"],
+      "authentication": {
+        "type": "none"
+      },
+      "rate_limits": {
+        "requests_per_minute": null
+      },
+      "cost_tracking": {
+        "enabled": false
+      },
+      "failover": {
+        "supported": false
+      },
+      "health_check": false
+    },
+    {
+      "id": "null_embedding",
+      "name": "Null Embedding Provider",
+      "description": "No-op provider that returns zero-vectors. Used as a safe fallback when no embedding API key is configured and in test environments.",
+      "class": "Modules\\TitanCore\\AI\\Providers\\NullEmbeddingProvider",
+      "capabilities": ["embeddings"],
+      "models": ["null"],
+      "authentication": {
+        "type": "none"
+      },
+      "rate_limits": {
+        "requests_per_minute": null
+      },
+      "cost_tracking": {
+        "enabled": false
+      },
+      "failover": {
+        "supported": false
+      },
+      "health_check": false
+    }
+  ],
+
+  "dependencies": [],
+
+  "permissions": [
+    "ai.chat",
+    "ai.embeddings",
+    "ai.providers.health"
+  ],
+
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0"
+  },
+
+  "discovery_metadata": {
+    "asset_type": "provider_registry",
+    "registry_key": "titancore.providers",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": ["providers", "openai", "anthropic", "local", "titanai", "core"]
+  }
+}

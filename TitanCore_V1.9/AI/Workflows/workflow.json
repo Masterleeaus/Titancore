@@ -1,0 +1,191 @@
+{
+  "name": "TitanCoreWorkflows",
+  "version": "1.9.0",
+  "description": "Pre-built AI workflows provided by TitanCore. Includes the standard RAG pipeline, tool-execution pipeline, and embedding ingestion workflow.",
+  "schema_version": "1.0.0",
+  "module": "TitanCore",
+  "capabilities": [
+    "rag",
+    "knowledge-base",
+    "tool-execution",
+    "embeddings",
+    "vector-store",
+    "function-calling"
+  ],
+  "workflows": [
+    {
+      "id": "titan_rag_workflow",
+      "name": "TitanCore RAG Workflow",
+      "description": "Standard Retrieval-Augmented Generation workflow. Embeds the user query, searches the vector store for relevant chunks, injects context into the LLM prompt, and returns a grounded, citation-aware response.",
+      "class": "Modules\\TitanCore\\AI\\AIOrchestratorPipeline",
+      "steps": [
+        {
+          "name": "guardrail_check",
+          "description": "Evaluate input against configured guardrail rules before proceeding.",
+          "required": false
+        },
+        {
+          "name": "query_embedding",
+          "description": "Embed the user query using the configured embedding provider.",
+          "required": true
+        },
+        {
+          "name": "vector_search",
+          "description": "Search the vector store for the top-k most similar document chunks.",
+          "required": true
+        },
+        {
+          "name": "context_injection",
+          "description": "Inject retrieved chunks into the LLM prompt using the RAG context prompt template.",
+          "required": true
+        },
+        {
+          "name": "llm_completion",
+          "description": "Run LLM chat completion with the enriched prompt.",
+          "required": true
+        },
+        {
+          "name": "citation_resolution",
+          "description": "Map LLM output back to source document references.",
+          "required": false
+        }
+      ],
+      "permissions": [
+        "ai.chat",
+        "ai.rag.query",
+        "ai.vector_store.read",
+        "ai.embeddings"
+      ],
+      "tags": [
+        "rag",
+        "knowledge-base",
+        "retrieval",
+        "core"
+      ]
+    },
+    {
+      "id": "titan_tool_execution_workflow",
+      "name": "TitanCore Tool Execution Workflow",
+      "description": "Secure tool execution workflow. Runs the allowlist check, permission gate, input validation, and timeout-guarded handler invocation with full audit logging.",
+      "class": "Modules\\TitanCore\\AI\\ToolExecutor",
+      "steps": [
+        {
+          "name": "allowlist_check",
+          "description": "Verify the requested tool is in the configured allowlist.",
+          "required": true
+        },
+        {
+          "name": "manifest_lookup",
+          "description": "Resolve the tool handler class from the registered manifest.",
+          "required": true
+        },
+        {
+          "name": "permission_gate",
+          "description": "Run the optional permission checker callable against the current context.",
+          "required": false
+        },
+        {
+          "name": "input_validation",
+          "description": "Validate input parameters against the declared input schema.",
+          "required": true
+        },
+        {
+          "name": "dry_run_check",
+          "description": "Return a no-side-effect response when context.dry_run is true.",
+          "required": false
+        },
+        {
+          "name": "handler_execution",
+          "description": "Invoke the handler class with timeout guard (SIGALRM when available).",
+          "required": true
+        },
+        {
+          "name": "audit_write",
+          "description": "Record the execution attempt (pass or fail) via the configured audit writer.",
+          "required": true
+        }
+      ],
+      "permissions": [
+        "ai.tools.execute",
+        "ai.tools.audit.read"
+      ],
+      "tags": [
+        "tool-execution",
+        "security",
+        "audit",
+        "core"
+      ]
+    },
+    {
+      "id": "titan_embedding_ingestion_workflow",
+      "name": "TitanCore Embedding Ingestion Workflow",
+      "description": "Batch document ingestion workflow. Chunks documents, generates embeddings, and upserts vectors into the configured vector store.",
+      "class": "Modules\\TitanCore\\AI\\Workflows\\EmbeddingIngestionWorkflow",
+      "note": "Dedicated workflow contract for embedding ingestion and vector-store upserts.",
+      "steps": [
+        {
+          "name": "document_chunking",
+          "description": "Split source documents into fixed-size or semantic chunks.",
+          "required": true
+        },
+        {
+          "name": "batch_embedding",
+          "description": "Generate embeddings for each chunk using the configured embedding provider.",
+          "required": true
+        },
+        {
+          "name": "vector_upsert",
+          "description": "Upsert chunk vectors and metadata into the vector store.",
+          "required": true
+        },
+        {
+          "name": "knowledge_sync",
+          "description": "Optionally sync the new knowledge base snapshot via SyncTitanDocsKnowledgeCommand.",
+          "required": false
+        }
+      ],
+      "permissions": [
+        "ai.embeddings",
+        "ai.vector_store.write",
+        "ai.knowledge-base"
+      ],
+      "tags": [
+        "embedding",
+        "ingestion",
+        "vector-store",
+        "knowledge-base",
+        "core"
+      ]
+    }
+  ],
+  "dependencies": [
+    "AI/Providers/provider.json",
+    "AI/Tools/tool.json",
+    "AI/Prompts/prompt.json"
+  ],
+  "permissions": [
+    "ai.chat",
+    "ai.embeddings",
+    "ai.rag.query",
+    "ai.vector_store.read",
+    "ai.vector_store.write",
+    "ai.tools.execute"
+  ],
+  "compatibility": {
+    "titancore_min": "1.9.0",
+    "php_min": "8.2.0"
+  },
+  "discovery_metadata": {
+    "asset_type": "workflow_registry",
+    "registry_key": "titancore.workflows",
+    "auto_register": true,
+    "capability_index": true,
+    "tags": [
+      "workflows",
+      "rag",
+      "tool-execution",
+      "embedding-ingestion",
+      "core"
+    ]
+  }
+}

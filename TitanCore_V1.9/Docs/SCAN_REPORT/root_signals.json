@@ -1,0 +1,13 @@
+{
+  "project_root": "Modules",
+  "signals": {
+    "composer_json": null,
+    "artisan": null,
+    "public_index": null,
+    "routes_web": null,
+    "routes_api": null,
+    "modules_dir": null,
+    "application_modules": null,
+    "env_example": null
+  }
+}

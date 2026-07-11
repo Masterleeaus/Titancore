@@ -1,0 +1,105 @@
+{
+  "keywords_searched": [
+    "openai",
+    "anthropic",
+    "cohere",
+    "transformers",
+    "vertexai",
+    "bedrock",
+    "gpt",
+    "openrouter",
+    "groq",
+    "mistral",
+    "ollama",
+    "langchain",
+    "llama",
+    "stability",
+    "replicate",
+    "together",
+    "deepseek",
+    "moondream",
+    "whisper",
+    "tts"
+  ],
+  "hits": [
+    {
+      "file": "AICore/database/migrations/2025_08_02_024424_create_ai_providers_table.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/database/seeders/DefaultAIProvidersSeeder.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/app/Services/AIProviderService.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/app/Services/AIRequestService.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/app/Services/AIProviderAddonService.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/app/Services/AIModuleDetectionService.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/app/Http/Controllers/AIProviderController.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/config/config.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/views/providers/index.blade.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/views/providers/create.blade.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/views/providers/show.blade.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/views/models/edit.blade.php",
+      "keyword": "gpt"
+    },
+    {
+      "file": "AICore/resources/views/models/create.blade.php",
+      "keyword": "gpt"
+    },
+    {
+      "file": "AICore/Config/ai.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/Config/policies.php",
+      "keyword": "gpt"
+    },
+    {
+      "file": "AICore/Http/Controllers/Api/ChatApiController.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/AI/Adapters/OpenAIAdapter.php",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/assets/js/aicore-provider-form.js",
+      "keyword": "openai"
+    },
+    {
+      "file": "AICore/resources/assets/js/aicore-model-form.js",
+      "keyword": "openai"
+    }
+  ],
+  "unique_env_vars_detected": [
+    "OPENAI_API_KEY"
+  ]
+}

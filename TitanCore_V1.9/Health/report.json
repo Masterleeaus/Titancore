@@ -1,0 +1,122 @@
+{
+    "name": "TitanCore",
+    "studlyName": "TitanCore",
+    "path": "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore",
+    "enabled": true,
+    "namespace": "Modules\\TitanCore\\",
+    "panels": [
+        "*"
+    ],
+    "dependencies": [],
+    "optionalDependencies": [],
+    "priority": 10,
+    "manifestPath": "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/module.manifest.json",
+    "manifestFiles": [
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/module.manifest.json"
+    ],
+    "plugins": [],
+    "resources": [
+        "Modules\\TitanCore\\Resources\\lang\\en\\messages",
+        "Modules\\TitanCore\\Resources\\lang\\eng\\messages"
+    ],
+    "pages": [],
+    "widgets": [],
+    "clusters": [],
+    "providers": [
+        "Modules\\TitanCore\\Providers\\AIServiceProvider",
+        "Modules\\TitanCore\\Providers\\TitanCoreServiceProvider"
+    ],
+    "migrations": [
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000001_create_ai_prompts.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000100_create_ai_kb_sources.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000110_create_ai_kb_documents.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000120_create_ai_kb_chunks.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000130_create_ai_kb_collections.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000140_create_ai_kb_collection_docs.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_01_000200_create_ai_usage_ledger.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_10_02_000200_create_ai_usage_table.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_12_06_000900_add_titan_core_to_modules_table.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_12_06_001000_add_titan_core_to_module_settings_table.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_12_06_200000_create_aicore_settings_table.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2025_12_28_000001_titancore_seed_permissions.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_01_03_171557_create_titancore_magicai_tables.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_01_03_171557_create_titancore_titanai_tables.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000010_add_scopes_to_ai_kb_collections.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000020_create_ai_agents.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000020_create_titan_ai_settings.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000030_create_titan_ai_runs.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000040_add_kb_versioning.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000050_create_titan_ai_usage.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_01_000060_create_titan_ai_agent_contracts.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_03_02_090300_add_company_id_to_titancore_tables.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Database/Migrations/2026_04_10_600001_seed_titan_core_subscription_package_feature.php"
+    ],
+    "views": [
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Resources/views"
+    ],
+    "translations": [
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Resources/lang"
+    ],
+    "routes": [
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Routes/api.php",
+        "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Routes/web.php"
+    ],
+    "issues": [
+        {
+            "level": "warning",
+            "code": "missing_discovery_directory",
+            "message": "Missing optional discovery directory.",
+            "repairable": true,
+            "path": "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/Filament"
+        },
+        {
+            "level": "warning",
+            "code": "missing_discovery_directory",
+            "message": "Missing optional discovery directory.",
+            "repairable": true,
+            "path": "/home/saassmar/domains/titanzero.pro/public_html/Modules/TitanCore/manifests"
+        }
+    ],
+    "repairs": [],
+    "manifest": {
+        "name": "TitanCore",
+        "enabled": true,
+        "priority": 10,
+        "providers": [
+            "Modules\\TitanCore\\Providers\\TitanCoreServiceProvider"
+        ],
+        "filament": {
+            "panels": [
+                "*"
+            ],
+            "navigation": true,
+            "resources_path": "Filament/Resources",
+            "pages_path": "Filament/Pages",
+            "widgets_path": "Filament/Widgets"
+        },
+        "health": {
+            "checks": [
+                "provider_exists",
+                "filament_resources_valid",
+                "translations_loaded",
+                "routes_present",
+                "migrations_present"
+            ],
+            "report_path": "Health/reports/latest.json"
+        },
+        "repair": {
+            "recipes_path": "Repair/repair.php",
+            "safe_auto_repair": true
+        }
+    },
+    "health": {
+        "checked_at": "2026-04-29T03:58:41+00:00",
+        "checks_file": null,
+        "repair_file": null,
+        "contracts_file": null,
+        "checks": [],
+        "repair_actions": []
+    },
+    "fingerprint": "cdbc04fd3ce902c6f2de18ccd5d1535fe52bc3b3",
+    "healthy": true
+}

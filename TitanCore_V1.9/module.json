@@ -1,0 +1,40 @@
+{
+  "name": "TitanCore",
+  "alias": "titancore",
+  "description": "Titan Core module (providers, settings, health checks, quotas, adapters).",
+  "version": "1.9.0",
+  "requires_php": "^8.2",
+  "requires_laravel": "^11.0",
+  "keywords": [
+    "ai",
+    "titancore",
+    "providers",
+    "adapters",
+    "health"
+  ],
+  "priority": 10,
+  "providers": [
+    "Modules\\TitanCore\\Providers\\TitanCoreServiceProvider",
+    "Modules\\TitanCore\\Providers\\TitanCorePlatformIntegrationServiceProvider"
+  ],
+  "files": [
+    "start.php"
+  ],
+  "filament_panel": "titanpro",
+  "active": 1,
+  "capabilities": [
+    "chat",
+    "completion",
+    "embeddings",
+    "reranking",
+    "vector-store",
+    "transcription",
+    "image-generation",
+    "moderation",
+    "streaming",
+    "rag",
+    "knowledge-base",
+    "function-calling",
+    "workflow"
+  ]
+}
