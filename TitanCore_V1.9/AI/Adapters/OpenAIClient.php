@@ -2,15 +2,13 @@
 
 namespace Modules\TitanCore\AI\Adapters;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\TitanCore\AI\ClientInterface;
 use Modules\TitanCore\Services\UsageLogger;
 
 class OpenAIClient implements ClientInterface
 {
-    protected const CHAT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
-    protected const EMBEDDINGS_ENDPOINT = 'https://api.openai.com/v1/embeddings';
+    protected const DISABLED_REASON = 'Direct OpenAI calls are disabled in TitanCore Pass 1. Use the TitanZero gateway.';
 
     protected string $apiKey;
     protected string $model;
@@ -30,54 +28,7 @@ class OpenAIClient implements ClientInterface
             return ['ok' => false, 'content' => null, 'usage' => null, 'reason' => 'Missing OPENAI_API_KEY'];
         }
 
-        $payload = [
-            'model' => $opts['model'] ?? $this->model,
-            'messages' => $messages,
-        ];
-
-        foreach (['temperature', 'max_tokens', 'top_p', 'presence_penalty', 'frequency_penalty', 'tools', 'tool_choice'] as $key) {
-            if (array_key_exists($key, $opts)) {
-                $payload[$key] = $opts[$key];
-            }
-        }
-
-        if (!empty($opts['stream'])) {
-            $payload['stream'] = true;
-        }
-
-        try {
-            $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
-                ->post(self::CHAT_ENDPOINT, $payload);
-
-            if ($response->failed()) {
-                return ['ok' => false, 'content' => null, 'usage' => null, 'reason' => 'HTTP ' . $response->status()];
-            }
-
-            $json = $response->json();
-
-            $usage = [
-                'prompt_tokens' => (int) ($json['usage']['prompt_tokens'] ?? 0),
-                'completion_tokens' => (int) ($json['usage']['completion_tokens'] ?? 0),
-                'total_tokens' => (int) ($json['usage']['total_tokens'] ?? 0),
-            ];
-
-            $this->logUsage($usage['total_tokens']);
-
-            return [
-                'ok' => true,
-                'content' => $json['choices'][0]['message']['content'] ?? null,
-                'usage' => $usage,
-                'reason' => null,
-            ];
-        } catch (\Throwable $e) {
-            Log::error('OpenAIClient: exception during chat.', ['error' => $e->getMessage()]);
-
-            return ['ok' => false, 'content' => null, 'usage' => null, 'reason' => $e->getMessage()];
-        }
+        return ['ok' => false, 'content' => null, 'usage' => null, 'reason' => self::DISABLED_REASON];
     }
 
     public function embed(array $input, array $opts = []): array
@@ -86,54 +37,12 @@ class OpenAIClient implements ClientInterface
             return ['ok' => false, 'vector' => null, 'reason' => 'Missing OPENAI_API_KEY'];
         }
 
-        $payload = [
-            'model' => $opts['model'] ?? $this->embeddingModel,
-            'input' => $input,
-        ];
-
-        if (array_key_exists('dimensions', $opts)) {
-            $payload['dimensions'] = $opts['dimensions'];
-        }
-
-        try {
-            $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
-                ->post(self::EMBEDDINGS_ENDPOINT, $payload);
-
-            if ($response->failed()) {
-                return ['ok' => false, 'vector' => null, 'reason' => 'HTTP ' . $response->status()];
-            }
-
-            $json = $response->json();
-
-            $usage = [
-                'prompt_tokens' => (int) ($json['usage']['prompt_tokens'] ?? 0),
-                'total_tokens' => (int) ($json['usage']['total_tokens'] ?? 0),
-            ];
-
-            $tokens = $json['usage']['total_tokens'] ?? $json['usage']['prompt_tokens'] ?? 0;
-            $this->logUsage((int) $tokens);
-
-            return [
-                'ok' => true,
-                'vector' => $json['data'][0]['embedding'] ?? null,
-                'usage' => $usage,
-                'reason' => null,
-                'data' => $json['data'] ?? [],
-            ];
-        } catch (\Throwable $e) {
-            Log::error('OpenAIClient: exception during embeddings.', ['error' => $e->getMessage()]);
-
-            return ['ok' => false, 'vector' => null, 'reason' => $e->getMessage()];
-        }
+        return ['ok' => false, 'vector' => null, 'reason' => self::DISABLED_REASON];
     }
 
     public function health(): array
     {
-        return ['ok' => (bool)$this->apiKey, 'provider' => $this->provider, 'reason' => $this->apiKey ? null : 'Missing API key'];
+        return ['ok' => false, 'provider' => $this->provider, 'reason' => $this->apiKey ? self::DISABLED_REASON : 'Missing API key'];
     }
 
     protected function logUsage(int $tokens): void

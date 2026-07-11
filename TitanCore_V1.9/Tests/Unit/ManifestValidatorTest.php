@@ -86,6 +86,37 @@ class ManifestValidatorTest extends TestCase
         $this->assertEmpty($issues, 'Expected no issues for a valid manifest.');
     }
 
+    public function test_manifest_version_alias_is_supported(): void
+    {
+        $this->makeModule('VersionedModule', [
+            'module' => 'VersionedModule',
+            'manifest_version' => '1.0.0',
+            'tools' => [$this->validTool()],
+        ]);
+
+        $validator = new ManifestValidator($this->tmpDir);
+        $issues = $validator->validateAll();
+
+        $this->assertEmpty($issues, 'Expected manifest_version 1.0.0 to be accepted.');
+    }
+
+    public function test_unsupported_manifest_version_produces_error(): void
+    {
+        $this->makeModule('UnsupportedVersion', [
+            'module' => 'UnsupportedVersion',
+            'manifest_version' => '9.9.9',
+            'tools' => [$this->validTool()],
+        ]);
+
+        $validator = new ManifestValidator($this->tmpDir);
+        $issues = $validator->validateAll();
+        $errors = array_filter($issues, fn (ManifestValidationIssue $i) => $i->isError());
+
+        $this->assertNotEmpty($errors);
+        $messages = array_map(fn (ManifestValidationIssue $i) => $i->message(), array_values($errors));
+        $this->assertStringContainsString('Unsupported manifest_version', implode(' ', $messages));
+    }
+
     public function test_missing_description_produces_error(): void
     {
         $tool = $this->validTool();

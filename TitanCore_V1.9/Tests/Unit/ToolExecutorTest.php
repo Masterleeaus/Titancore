@@ -11,6 +11,7 @@ use Modules\TitanCore\Contracts\AI\GuardrailContract;
 use Modules\TitanCore\Contracts\AI\RetrievalContract;
 use Modules\TitanCore\Contracts\AI\ToolExecutorContract;
 use Modules\TitanCore\Contracts\AI\ToolRollbackContract;
+use Modules\TitanCore\Events\AiRequestCompleted;
 use Modules\TitanCore\Exceptions\AI\ToolHandlerNotFoundException;
 use Modules\TitanCore\Exceptions\AI\ToolInputValidationException;
 use Modules\TitanCore\Exceptions\AI\ToolNotAllowedException;
@@ -26,6 +27,17 @@ class EchoToolHandler
     public function __invoke(array $params): array
     {
         return ['echo' => $params];
+    }
+}
+
+/** @internal Recursive handler used to verify recursion protection. */
+class RecursiveToolHandler
+{
+    public static ?ToolExecutor $executor = null;
+
+    public function __invoke(array $params): array
+    {
+        return self::$executor->execute('recursive', $params);
     }
 }
 
@@ -81,6 +93,16 @@ class ToolExecutorTest extends TestCase
         $this->assertArrayHasKey('audit_ref', $arr);
         $this->assertTrue($arr['ok']);
         $this->assertSame('test.tool', $arr['tool']);
+    }
+
+    public function test_ai_request_completed_event_sets_timestamp_and_version(): void
+    {
+        $event = new AiRequestCompleted('corr-1', 'ok', 123, 4, 5, 1.25);
+
+        $this->assertSame('corr-1', $event->correlationId);
+        $this->assertSame('ok', $event->status);
+        $this->assertSame('1.0.0', $event->eventVersion);
+        $this->assertNotEmpty($event->occurredAt);
     }
 
     // ── ToolExecutor: successful tool call ────────────────────────────────────
@@ -478,6 +500,8 @@ class ToolExecutorTest extends TestCase
         $this->assertSame('success', $auditEntries[0]['status']);
         $this->assertNotNull($auditEntries[0]['input_hash']);
         $this->assertIsInt($auditEntries[0]['duration_ms']);
+        $this->assertSame('1.0.0', $auditEntries[0]['version']);
+        $this->assertArrayHasKey('timestamp', $auditEntries[0]);
     }
 
     public function test_audit_writer_called_with_blocked_status_on_allowlist_violation(): void
@@ -575,6 +599,19 @@ class ToolExecutorTest extends TestCase
 
         $expectedHash = hash('sha256', (string) json_encode($params));
         $this->assertSame($expectedHash, $auditEntries[0]['input_hash']);
+    }
+
+    public function test_recursive_tool_execution_is_blocked(): void
+    {
+        $executor = new ToolExecutor([
+            'recursive' => ['handler' => RecursiveToolHandler::class],
+        ]);
+
+        RecursiveToolHandler::$executor = $executor;
+
+        $this->expectException(\Modules\TitanCore\Exceptions\AI\ToolRecursionDetectedException::class);
+
+        $executor->execute('recursive', []);
     }
 
     // ── ToolTimedOutException ─────────────────────────────────────────────────

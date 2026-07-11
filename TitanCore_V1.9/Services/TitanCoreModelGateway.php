@@ -2,6 +2,7 @@
 
 namespace Modules\TitanCore\Services;
 
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Log;
 use Modules\TitanCore\AI\Providers\LocalModelProvider;
 use Modules\TitanCore\AI\Providers\NullChatProvider;
@@ -26,7 +27,10 @@ use Modules\TitanCore\Services\UsageCostLogger;
  */
 class TitanCoreModelGateway
 {
-    public function __construct(protected ?UsageCostLogger $usageCostLogger = null) {}
+    public function __construct(
+        protected ?UsageCostLogger $usageCostLogger = null,
+        protected ?Container $container = null,
+    ) {}
 
     /**
      * Route a chat completion request to the appropriate provider.
@@ -110,18 +114,18 @@ class TitanCoreModelGateway
     protected function buildChatProvider(string $key): ChatProviderContract
     {
         return match ($key) {
-            'null'  => new NullChatProvider(),
-            'local' => new LocalModelProvider(),
-            default => new OpenAiChatProvider(), // 'openai' and unknown keys default to OpenAI
+            'null'  => $this->resolveProvider(NullChatProvider::class),
+            'local' => $this->resolveProvider(LocalModelProvider::class),
+            default => $this->resolveProvider(OpenAiChatProvider::class), // 'openai' and unknown keys default to OpenAI
         };
     }
 
     protected function buildEmbeddingProvider(string $key): EmbeddingProviderContract
     {
         return match ($key) {
-            'null'  => new NullEmbeddingProvider(),
-            'local' => new LocalModelProvider(),
-            default => new OpenAiEmbeddingProvider(),
+            'null'  => $this->resolveProvider(NullEmbeddingProvider::class),
+            'local' => $this->resolveProvider(LocalModelProvider::class),
+            default => $this->resolveProvider(OpenAiEmbeddingProvider::class),
         };
     }
 
@@ -149,6 +153,28 @@ class TitanCoreModelGateway
         );
 
         return (new ProviderFailoverChain($providers))->setFailoverStatuses($statuses);
+    }
+
+    /**
+     * Resolve provider instances through the container when available.
+     *
+     * @param  class-string<ChatProviderContract|EmbeddingProviderContract>  $class
+     * @return ChatProviderContract|EmbeddingProviderContract
+     */
+    protected function resolveProvider(string $class): ChatProviderContract|EmbeddingProviderContract
+    {
+        if ($this->container) {
+            try {
+                return $this->container->make($class);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException(
+                    sprintf('TitanCore failed to resolve AI provider [%s]: %s', $class, $e->getMessage()),
+                    previous: $e,
+                );
+            }
+        }
+
+        return new $class();
     }
 
     // -------------------------------------------------------------------------

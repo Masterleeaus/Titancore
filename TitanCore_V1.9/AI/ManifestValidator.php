@@ -36,6 +36,9 @@ class ManifestValidator
     /** @var string[] Valid risk_class values */
     private const VALID_RISK_CLASSES = ['read', 'advisory', 'write', 'destructive', 'admin'];
 
+    /** @var string[] Supported manifest format versions */
+    private const SUPPORTED_MANIFEST_VERSIONS = ['1.0.0'];
+
     private string $modulesBase;
 
     public function __construct(?string $modulesBase = null)
@@ -107,6 +110,17 @@ class ManifestValidator
 
         if (! is_array($manifest)) {
             return [ManifestValidationIssue::error($moduleName, 'ai_tools.json', 'Manifest root must be a JSON object.')];
+        }
+
+        $manifestVersion = $manifest['manifest_version'] ?? $manifest['schema_version'] ?? null;
+        if (is_string($manifestVersion) && $manifestVersion !== '' && ! in_array($manifestVersion, self::SUPPORTED_MANIFEST_VERSIONS, true)) {
+            return [
+                ManifestValidationIssue::error(
+                    $moduleName,
+                    'ai_tools.json',
+                    'Unsupported manifest_version "' . $manifestVersion . '". Supported versions: ' . implode(', ', self::SUPPORTED_MANIFEST_VERSIONS) . '.'
+                ),
+            ];
         }
 
         $tools = $manifest['tools'] ?? null;

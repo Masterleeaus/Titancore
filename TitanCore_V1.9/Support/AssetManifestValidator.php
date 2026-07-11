@@ -38,6 +38,9 @@ class AssetManifestValidator
     /** Supported schema_version values */
     public const SUPPORTED_SCHEMA_VERSIONS = ['1.0.0'];
 
+    /** Supported manifest_version values */
+    public const SUPPORTED_MANIFEST_VERSIONS = ['1.0.0'];
+
     /**
      * Required fields for each manifest type's top-level object.
      * An empty array means "no extra requirements beyond name+version+description".
@@ -121,15 +124,21 @@ class AssetManifestValidator
         $errors   = [];
         $warnings = [];
 
-        // 1. Schema version check (if declared)
-        if (isset($data['schema_version'])) {
-            $sv = (string) $data['schema_version'];
-            if (! in_array($sv, self::SUPPORTED_SCHEMA_VERSIONS, true)) {
+        // 1. Schema / manifest version check (if declared)
+        $manifestVersionKey = array_key_exists('manifest_version', $data)
+            ? 'manifest_version'
+            : (array_key_exists('schema_version', $data) ? 'schema_version' : null);
+        $manifestVersion = $manifestVersionKey !== null ? $data[$manifestVersionKey] : null;
+        if (is_string($manifestVersion) && $manifestVersion !== '') {
+            $supportedVersions = array_values(array_unique(array_merge(self::SUPPORTED_SCHEMA_VERSIONS, self::SUPPORTED_MANIFEST_VERSIONS)));
+
+            if (! in_array($manifestVersion, $supportedVersions, true)) {
                 $errors[] = sprintf(
-                    'Unknown schema_version "%s" in %s. Supported: [%s].',
-                    $sv,
+                    'Unknown %s "%s" in %s. Supported: [%s].',
+                    $manifestVersionKey,
+                    $manifestVersion,
                     $label,
-                    implode(', ', self::SUPPORTED_SCHEMA_VERSIONS)
+                    implode(', ', $supportedVersions)
                 );
             }
         }
@@ -137,6 +146,10 @@ class AssetManifestValidator
         // 2. Required top-level fields for this type
         $required = self::REQUIRED_BY_TYPE[$type] ?? ['name', 'version', 'description'];
         foreach ($required as $field) {
+            if ($field === 'capabilities' && array_key_exists($field, $data) && is_array($data[$field])) {
+                continue;
+            }
+
             if (! isset($data[$field]) || $data[$field] === '' || $data[$field] === [] || $data[$field] === null) {
                 $errors[] = "Missing or empty required field \"{$field}\" in {$label}.";
             }

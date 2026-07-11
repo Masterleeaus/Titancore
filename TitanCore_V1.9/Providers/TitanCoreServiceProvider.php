@@ -103,7 +103,10 @@ class TitanCoreServiceProvider extends ServiceProvider
         // App-level Titan config files (config/ directory)
         $this->mergeConfigFrom(config_path('titan-modules.php'), 'titan-modules');
         $this->mergeConfigFrom(config_path('titan-ai.php'), 'titan-ai');
-        $this->mergeConfigFrom(config_path('titan-model-runtime.php'), 'titan-model-runtime');
+        // The file name stays hyphenated for Laravel's config_path() convention,
+        // but the runtime key remains underscored to preserve existing
+        // config('titan_model_runtime.*') consumers.
+        $this->mergeConfigFrom(config_path('titan-model-runtime.php'), 'titan_model_runtime');
 
         // Module-level config overrides
         $this->mergeConfigFrom(__DIR__.'/../Config/config.php', 'titancore');
@@ -198,9 +201,9 @@ class TitanCoreServiceProvider extends ServiceProvider
         }
 
         // titan-model-runtime: providers must be a non-empty array
-        $providers = config('titan-model-runtime.providers');
+        $providers = config('titan_model_runtime.providers');
         if (empty($providers) || ! is_array($providers)) {
-            $missing[] = 'titan-model-runtime.providers';
+            $missing[] = 'titan_model_runtime.providers';
         }
 
         if (! empty($missing)) {

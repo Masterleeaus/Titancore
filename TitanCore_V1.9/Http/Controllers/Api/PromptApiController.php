@@ -5,6 +5,8 @@ namespace Modules\TitanCore\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PromptApiController extends Controller
 {
@@ -28,7 +30,10 @@ class PromptApiController extends Controller
     public function show(Request $request, int $id)
     {
         $row = DB::table('ai_prompts')->where('id', $id)->first();
-        return response()->json(['prompt' => $row]);
+
+        return $row
+            ? response()->json(['prompt' => $this->decodePromptMetadata($row)])
+            : response()->json(['error' => 'Prompt not found'], 404);
     }
 
     public function resolve(Request $request, string $namespace, string $slug)
@@ -48,7 +53,9 @@ class PromptApiController extends Controller
             ->where('version', $ver)
             ->first();
 
-        return response()->json(['prompt' => $row]);
+        return $row
+            ? response()->json(['prompt' => $this->decodePromptMetadata($row)])
+            : response()->json(['error' => 'Prompt not found'], 404);
     }
 
     public function createVersion(Request $request)
@@ -81,28 +88,213 @@ class PromptApiController extends Controller
         return response()->json(['id' => $id, 'version' => $ver], 201);
     }
 
-    /**
-     * Placeholder endpoint so routes can be wired safely without breaking.
-     * Replace with your real binding logic in the host app.
-     */
     public function bind(Request $request)
     {
         return response()->json(['status' => 'ok']);
     }
 
-    // Optional CRUD placeholders (kept simple and valid).
     public function store(Request $request)
     {
-        return response()->json(['todo' => 'store'], 201);
+        $data = $this->validatePromptPayload($request, true);
+        ['namespace' => $namespace, 'slug' => $slug, 'locale' => $locale] = $this->resolvePromptIdentity($data);
+        $metadata = $this->normalizeMetadata($data);
+        $content = $this->normalizeContent($data);
+        $version = $this->nextVersion($namespace, $slug, $locale);
+
+        $payload = [
+            'namespace' => $namespace,
+            'slug' => $slug,
+            'version' => $version,
+            'locale' => $locale,
+            'content' => $content,
+            'metadata' => json_encode($metadata),
+            'source' => $data['source'] ?? 'core',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        if (array_key_exists('company_id', $data)) {
+            $payload['company_id'] = $data['company_id'];
+        }
+
+        $id = DB::table('ai_prompts')->insertGetId($payload);
+
+        return response()->json([
+            'id' => $id,
+            'version' => $version,
+            'prompt' => $this->hydratePromptRow(null, $payload, $id),
+        ], 201);
     }
 
     public function update(Request $request, int $id)
     {
-        return response()->json(['todo' => 'update', 'id' => $id]);
+        $row = DB::table('ai_prompts')->where('id', $id)->first();
+        if (! $row) {
+            return response()->json(['error' => 'Prompt not found'], 404);
+        }
+
+        $data = $this->validatePromptPayload($request, false);
+        ['namespace' => $namespace, 'slug' => $slug, 'locale' => $locale] = $this->resolvePromptIdentity($data, $row);
+        $metadata = $this->normalizeMetadata($data, $row);
+        $content = $this->normalizeContent($data, (string) $row->content);
+
+        $payload = [
+            'namespace' => $namespace,
+            'slug' => $slug,
+            'locale' => $locale,
+            'content' => $content,
+            'metadata' => json_encode($metadata),
+            'source' => $data['source'] ?? $row->source,
+            'updated_at' => now(),
+        ];
+
+        if (array_key_exists('company_id', $data)) {
+            $payload['company_id'] = $data['company_id'];
+        }
+
+        DB::table('ai_prompts')->where('id', $id)->update($payload);
+
+        return response()->json([
+            'id' => $id,
+            'prompt' => $this->hydratePromptRow($row, $payload, $id),
+        ]);
     }
 
     public function destroy(int $id)
     {
-        return response()->json(['todo' => 'destroy', 'id' => $id]);
+        $deleted = DB::table('ai_prompts')->where('id', $id)->delete();
+
+        if ($deleted === 0) {
+            return response()->json(['error' => 'Prompt not found'], 404);
+        }
+
+        return response()->json(['deleted' => true, 'id' => $id]);
+    }
+
+    private function validatePromptPayload(Request $request, bool $isCreate): array
+    {
+        $rules = [
+            // Namespace is the canonical prompt identity. Title is optional display metadata.
+            'namespace' => $isCreate ? 'required|string|max:128' : 'sometimes|string|max:128',
+            'title' => 'sometimes|string|max:255',
+            'slug' => 'sometimes|string|max:128',
+            'locale' => 'sometimes|string|max:16',
+            'content' => $isCreate ? 'required|string|min:1' : 'sometimes|string|min:1',
+            'metadata' => 'sometimes|array',
+            'source' => 'sometimes|string|in:core,module,agent,tenant',
+            'company_id' => 'sometimes|nullable|integer',
+        ];
+
+        return $request->validate($rules);
+    }
+
+    private function nextVersion(string $namespace, string $slug, string $locale): int
+    {
+        $latest = DB::table('ai_prompts')
+            ->where('namespace', $namespace)
+            ->where('slug', $slug)
+            ->where('locale', $locale)
+            ->max('version');
+
+        return ((int) $latest) + 1;
+    }
+
+    private function normalizeMetadata(array $data, ?object $existing = null): array
+    {
+        $metadata = [];
+
+        if ($existing && isset($existing->metadata) && is_string($existing->metadata)) {
+            $decoded = $this->decodeJsonToArray($existing->metadata);
+            if (is_array($decoded)) {
+                $metadata = $decoded;
+            }
+        }
+
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $metadata = array_merge($metadata, $data['metadata']);
+        }
+
+        if (isset($data['title'])) {
+            $metadata['title'] = $data['title'];
+        } elseif (! isset($metadata['title']) && isset($data['namespace'])) {
+            $metadata['title'] = $data['namespace'];
+        }
+
+        return $metadata;
+    }
+
+    private function resolvePromptIdentity(array $data, ?object $existing = null): array
+    {
+        $namespace = (string) ($data['namespace'] ?? $existing?->namespace ?? '');
+
+        $slug = (string) ($data['slug'] ?? '');
+        if ($slug === '') {
+            $slug = Str::slug($namespace);
+            if ($slug === '') {
+                throw ValidationException::withMessages([
+                    'slug' => 'A slug is required when the namespace contains no valid ASCII characters for slug generation.',
+                ]);
+            }
+        }
+
+        $locale = (string) ($data['locale'] ?? $existing?->locale ?? 'en');
+
+        return compact('namespace', 'slug', 'locale');
+    }
+
+    private function normalizeContent(array $data, ?string $fallback = null): string
+    {
+        $content = (string) ($data['content'] ?? $fallback ?? '');
+        $content = trim($content);
+
+        if ($content === '') {
+            throw ValidationException::withMessages([
+                'content' => 'The content field must contain non-whitespace characters.',
+            ]);
+        }
+
+        return $content;
+    }
+
+    private function hydratePromptRow(?object $existing, array $payload, int $id): object
+    {
+        $values = $existing ? (array) $existing : [];
+        $values['id'] = $id;
+
+        foreach ($payload as $key => $value) {
+            $values[$key] = $value;
+        }
+
+        return $this->decodePromptMetadata((object) $values);
+    }
+
+    private function decodePromptMetadata(object $row): object
+    {
+        if (! isset($row->metadata) || ! is_string($row->metadata)) {
+            return $row;
+        }
+
+        $decoded = $this->decodeJsonObject($row->metadata);
+        if (! is_array($decoded)) {
+            return $row;
+        }
+
+        $row->metadata = $decoded;
+
+        return $row;
+    }
+
+    private function decodeJsonToArray(?string $json): ?array
+    {
+        if ($json === null) {
+            return null;
+        }
+
+        $decoded = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            return null;
+        }
+
+        return $decoded;
     }
 }
