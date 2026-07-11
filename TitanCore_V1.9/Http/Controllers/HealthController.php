@@ -3,18 +3,19 @@
 namespace Modules\TitanCore\Http\Controllers;
 
 use Illuminate\Routing\Controller as BaseController;
+use Modules\TitanCore\Services\TitanCoreModelGateway;
 
 class HealthController extends BaseController
 {
+    public function __construct(private TitanCoreModelGateway $gateway) {}
+
     /**
      * Render the HTML health page for Titan Core.
      */
     public function index()
     {
-        $client = app('titancore.client');
-
         try {
-            $health = $client->health();
+            $health = $this->gateway->health();
         } catch (\Throwable $e) {
             $health = [
                 'ok'       => false,
@@ -34,10 +35,8 @@ class HealthController extends BaseController
      */
     public function status()
     {
-        $client = app('titancore.client');
-
         try {
-            $health = $client->health();
+            $health = $this->gateway->health();
         } catch (\Throwable $e) {
             $health = [
                 'ok'       => false,

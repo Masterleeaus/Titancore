@@ -6,7 +6,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Modules\TitanCore\Services\KBPublishService;
+use Modules\TitanCore\Services\KbPublishService;
 use Modules\TitanCore\Services\TitanAIRunLogService;
 
 class PublishKbSnapshotJob implements ShouldQueue
@@ -20,7 +20,7 @@ class PublishKbSnapshotJob implements ShouldQueue
         public ?int $userId = null
     ) {}
 
-    public function handle(KBPublishService $pub, TitanAIRunLogService $log): void
+    public function handle(KbPublishService $pub, TitanAIRunLogService $log): void
     {
         $runId = $log->create('publish_kb', $this->tenantId, true, ['collection'=>$this->collectionKey,'label'=>$this->label]);
         $log->start($runId);
