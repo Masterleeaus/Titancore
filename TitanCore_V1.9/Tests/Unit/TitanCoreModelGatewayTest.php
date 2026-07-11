@@ -16,6 +16,7 @@ class TitanCoreModelGatewayTest extends TestCase
 {
     public function test_chat_resolves_providers_through_the_container(): void
     {
+        $resolved = [];
         $container = $this->makeContainerStub([
             NullChatProvider::class => new class implements ChatProviderContract {
                 public function chat(array $messages, array $options = []): array
@@ -41,17 +42,18 @@ class TitanCoreModelGatewayTest extends TestCase
                     return 'container';
                 }
             },
-        ]);
+        ], $resolved);
 
         $gateway = new TitanCoreModelGateway(null, $container);
         $result = $gateway->chat([['role' => 'user', 'content' => 'hello']], [], ['provider' => 'null']);
 
         $this->assertSame('container chat', $result['content']);
-        $this->assertSame([NullChatProvider::class], $container->resolved);
+        $this->assertSame([NullChatProvider::class], $resolved);
     }
 
     public function test_embed_resolves_local_provider_through_the_container(): void
     {
+        $resolved = [];
         $container = $this->makeContainerStub([
             LocalModelProvider::class => new class implements ChatProviderContract, EmbeddingProviderContract {
                 public function chat(array $messages, array $options = []): array
@@ -90,13 +92,13 @@ class TitanCoreModelGatewayTest extends TestCase
                     return 'local';
                 }
             },
-        ]);
+        ], $resolved);
 
         $gateway = new TitanCoreModelGateway(null, $container);
         $result = $gateway->embed('hello', [], ['provider' => 'local']);
 
         $this->assertSame([[0.1, 0.2, 0.3]], $result['vectors']);
-        $this->assertSame([LocalModelProvider::class], $container->resolved);
+        $this->assertSame([LocalModelProvider::class], $resolved);
     }
 
     public function test_validate_titan_config_uses_the_underscored_runtime_key(): void
@@ -116,14 +118,13 @@ class TitanCoreModelGatewayTest extends TestCase
                 'path' => 'Modules',
             ],
         ];
-
         try {
             $provider = new TitanCoreServiceProvider($this->makeContainerStub([]));
             $method = new ReflectionMethod(TitanCoreServiceProvider::class, 'validateTitanConfig');
             $method->setAccessible(true);
+            $method->setAccessible(true);
+            $this->expectNotToPerformAssertions();
             $method->invoke($provider);
-
-            $this->assertTrue(true);
         } finally {
             $GLOBALS['__titan_config'] = $originalConfig;
         }
@@ -132,42 +133,24 @@ class TitanCoreModelGatewayTest extends TestCase
     /**
      * @param  array<class-string, object>  $providers
      */
-    private function makeContainerStub(array $providers): Container
+    private function makeContainerStub(array $providers, ?array &$resolved = null): Container
     {
-        return new class($providers) implements Container {
-            public array $resolved = [];
+        $resolved ??= [];
 
-            /**
-             * @param  array<class-string, object>  $providers
-             */
-            public function __construct(private array $providers) {}
+        $container = $this->getMockBuilder(Container::class)
+            ->setMethods(['make'])
+            ->getMock();
 
-            public function make(string $abstract, array $parameters = []): mixed
-            {
-                $this->resolved[] = $abstract;
+        $container->method('make')->willReturnCallback(function (string $abstract, array $parameters = []) use ($providers, &$resolved) {
+            $resolved[] = $abstract;
 
-                if (! array_key_exists($abstract, $this->providers)) {
-                    throw new \RuntimeException("Unexpected resolution: {$abstract}");
-                }
-
-                return $this->providers[$abstract];
+            if (! array_key_exists($abstract, $providers)) {
+                throw new \RuntimeException("Unexpected resolution: {$abstract}");
             }
 
-            public function bind(...$args): void {}
-            public function singleton(...$args): void {}
-            public function instance(...$args): void {}
-            public function alias(...$args): void {}
-            public function tagged(...$args): array { return []; }
-            public function tag(...$args): void {}
-            public function has(...$args): bool { return false; }
-            public function bound(...$args): bool { return false; }
-            public function resolved(...$args): bool { return false; }
-            public function makeWith(...$args): mixed { return $this->make($args[0], $args[1] ?? []); }
-            public function extend(...$args): void {}
-            public function __call(string $name, array $arguments): mixed
-            {
-                return null;
-            }
-        };
+            return $providers[$abstract];
+        });
+
+        return $container;
     }
 }
