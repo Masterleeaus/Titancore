@@ -198,16 +198,14 @@ class ProvidersController extends Controller
     {
         $enabled            = (bool) config('titan_model_runtime.failover.enabled', false);
         $legacyChain        = config('titan_model_runtime.failover.chain', []);
-        $chatProviders      = config('titan_model_runtime.failover.chat_providers', []);
-        $embeddingProviders = config('titan_model_runtime.failover.embedding_providers', []);
-
-        if ($chatProviders === [] && $legacyChain !== []) {
-            $chatProviders = $legacyChain;
-        }
-
-        if ($embeddingProviders === [] && $legacyChain !== []) {
-            $embeddingProviders = $legacyChain;
-        }
+        $chatProviders      = $this->applyLegacyFailoverFallback(
+            config('titan_model_runtime.failover.chat_providers', []),
+            $legacyChain,
+        );
+        $embeddingProviders = $this->applyLegacyFailoverFallback(
+            config('titan_model_runtime.failover.embedding_providers', []),
+            $legacyChain,
+        );
 
         return response()->json([
             'enabled'             => $enabled,
@@ -217,6 +215,15 @@ class ProvidersController extends Controller
             'chain'               => $chatProviders,
             'ts'                  => now()->toIso8601String(),
         ]);
+    }
+
+    private function applyLegacyFailoverFallback(array $providers, array $legacyChain): array
+    {
+        if ($providers === [] && $legacyChain !== []) {
+            return $legacyChain;
+        }
+
+        return $providers;
     }
 
     /**
