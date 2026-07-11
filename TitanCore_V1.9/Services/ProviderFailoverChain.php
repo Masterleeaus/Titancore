@@ -29,14 +29,19 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
     protected $sleeper = null;
     /** @var callable():float|null */
     protected $clock = null;
-    protected static array $providerFailureCounts = [];
-    protected static array $providerCooldownUntil = [];
+    protected object $stateStore;
 
     /**
      * @param  ChatProviderContract[]|EmbeddingProviderContract[]  $providers
      *         Ordered list of providers; first entry is primary.
      */
-    public function __construct(protected array $providers = []) {}
+    public function __construct(protected array $providers = [])
+    {
+        $this->stateStore = (object) [
+            'failureCounts' => [],
+            'cooldownUntil' => [],
+        ];
+    }
 
     /**
      * Try each provider in order for chat completions.
@@ -91,11 +96,8 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             }
 
             $this->resetProviderFailureState($providerName);
-
-            if (!$shouldFailover) {
-                // Non-retryable error (e.g. 400 bad request) — stop chain.
-                break;
-            }
+            // Non-retryable error (e.g. 400 bad request) — stop chain.
+            break;
         }
 
         return $lastResult;
@@ -242,6 +244,18 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
     }
 
     /**
+     * Reuse a shared state store across chain instances built by the same caller.
+     */
+    public function setStateStore(object $stateStore): static
+    {
+        $stateStore->failureCounts ??= [];
+        $stateStore->cooldownUntil ??= [];
+        $this->stateStore = $stateStore;
+
+        return $this;
+    }
+
+    /**
      * Return the first provider in the chain, or null if empty.
      */
     protected function primaryProvider(): ChatProviderContract|EmbeddingProviderContract|null
@@ -256,15 +270,15 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
 
     protected function recordProviderFailure(string $providerName): int
     {
-        $failures = (self::$providerFailureCounts[$providerName] ?? 0) + 1;
-        self::$providerFailureCounts[$providerName] = $failures;
+        $failures = (($this->stateStore->failureCounts[$providerName] ?? 0) + 1);
+        $this->stateStore->failureCounts[$providerName] = $failures;
 
         if (
             $this->circuitBreakerFailureThreshold > 0
             && $this->circuitBreakerCooldownSeconds > 0
             && $failures >= $this->circuitBreakerFailureThreshold
         ) {
-            self::$providerCooldownUntil[$providerName] = $this->now() + $this->circuitBreakerCooldownSeconds;
+            $this->stateStore->cooldownUntil[$providerName] = $this->now() + $this->circuitBreakerCooldownSeconds;
         }
 
         return $failures;
@@ -272,12 +286,12 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
 
     protected function resetProviderFailureState(string $providerName): void
     {
-        unset(self::$providerFailureCounts[$providerName], self::$providerCooldownUntil[$providerName]);
+        unset($this->stateStore->failureCounts[$providerName], $this->stateStore->cooldownUntil[$providerName]);
     }
 
     protected function isProviderCircuitOpen(string $providerName): bool
     {
-        $cooldownUntil = self::$providerCooldownUntil[$providerName] ?? null;
+        $cooldownUntil = $this->stateStore->cooldownUntil[$providerName] ?? null;
 
         if ($cooldownUntil === null) {
             return false;
@@ -303,7 +317,9 @@ class ProviderFailoverChain implements ChatProviderContract, EmbeddingProviderCo
             $delayMs = min($delayMs, $this->backoffMaxDelayMs);
         }
 
-        $sleep = $this->sleeper ?? static fn (int $microseconds): bool => usleep($microseconds);
+        $sleep = $this->sleeper ?? static function (int $microseconds): void {
+            usleep($microseconds);
+        };
         $sleep((int) $delayMs * 1000);
     }
 

@@ -27,10 +27,16 @@ use Modules\TitanCore\Services\UsageCostLogger;
  */
 class TitanCoreModelGateway
 {
+    protected object $chatFailoverState;
+    protected object $embeddingFailoverState;
+
     public function __construct(
         protected ?UsageCostLogger $usageCostLogger = null,
         protected ?Container $container = null,
-    ) {}
+    ) {
+        $this->chatFailoverState = (object) ['failureCounts' => [], 'cooldownUntil' => []];
+        $this->embeddingFailoverState = (object) ['failureCounts' => [], 'cooldownUntil' => []];
+    }
 
     /**
      * Route a chat completion request to the appropriate provider.
@@ -144,6 +150,7 @@ class TitanCoreModelGateway
         );
 
         return (new ProviderFailoverChain($providers))
+            ->setStateStore($this->chatFailoverState)
             ->setFailoverStatuses($statuses)
             ->setBackoff($backoffBaseMs, $backoffMaxMs)
             ->setCircuitBreaker($circuitThreshold, $circuitCooldown);
@@ -164,6 +171,7 @@ class TitanCoreModelGateway
         );
 
         return (new ProviderFailoverChain($providers))
+            ->setStateStore($this->embeddingFailoverState)
             ->setFailoverStatuses($statuses)
             ->setBackoff($backoffBaseMs, $backoffMaxMs)
             ->setCircuitBreaker($circuitThreshold, $circuitCooldown);
