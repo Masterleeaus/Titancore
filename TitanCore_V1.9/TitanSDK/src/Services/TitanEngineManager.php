@@ -40,4 +40,34 @@ class TitanEngineManager implements EngineManagerContract
     {
         return $this->manager->lifecycle($engineId, $state);
     }
+
+    public function enable(string $engineId): ?array
+    {
+        return $this->manager->enable($engineId);
+    }
+
+    public function disable(string $engineId): ?array
+    {
+        return $this->manager->disable($engineId);
+    }
+
+    public function upgrade(string $engineId): ?array
+    {
+        return $this->manager->upgrade($engineId);
+    }
+
+    public function rollback(string $engineId): ?array
+    {
+        return $this->manager->rollback($engineId);
+    }
+
+    public function repair(string $engineId): ?array
+    {
+        return $this->manager->repair($engineId);
+    }
+
+    public function remove(string $engineId): ?array
+    {
+        return $this->manager->remove($engineId);
+    }
 }

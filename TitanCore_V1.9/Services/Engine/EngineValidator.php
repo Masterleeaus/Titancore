@@ -26,7 +26,27 @@ class EngineValidator
     {
         $errors = [];
 
-        foreach (['id', 'name', 'description', 'class', 'version', 'lifecycle'] as $field) {
+        foreach ([
+            'id',
+            'name',
+            'version',
+            'sdk_version',
+            'type',
+            'description',
+            'author',
+            'class',
+            'lifecycle',
+            'dependencies',
+            'permissions',
+            'capabilities',
+            'providers',
+            'widgets',
+            'resources',
+            'settings',
+            'health_checks',
+            'upgrade_handlers',
+            'install_handlers',
+        ] as $field) {
             if (! isset($engine[$field]) || $engine[$field] === '') {
                 $errors[] = sprintf('Missing required field "%s".', $field);
             }

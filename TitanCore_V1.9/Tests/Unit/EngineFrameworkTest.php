@@ -23,10 +23,23 @@ class EngineFrameworkTest extends TestCase
             'engines' => [[
                 'id' => 'engine_a',
                 'name' => 'Engine A',
+                'type' => 'runtime',
                 'description' => 'Test engine',
                 'class' => 'Modules\\TitanCore\\Services\\TitanCoreModelGateway',
                 'version' => '1.0.0',
-                'lifecycle' => 'managed',
+                'sdk_version' => '1.0.0',
+                'author' => 'TitanCore',
+                'lifecycle' => 'registered',
+                'dependencies' => [],
+                'permissions' => ['ai.chat'],
+                'capabilities' => ['chat'],
+                'providers' => ['titancore.gateway'],
+                'widgets' => [],
+                'resources' => [],
+                'settings' => ['default_provider_strategy' => 'gateway'],
+                'health_checks' => ['gateway_connectivity'],
+                'upgrade_handlers' => ['Modules\\TitanCore\\Services\\Engine\\EngineLifecycle::transition'],
+                'install_handlers' => ['Modules\\TitanCore\\Services\\Engine\\EngineInstaller::install'],
             ]],
         ];
 
@@ -53,10 +66,23 @@ class EngineFrameworkTest extends TestCase
         $lifecycle = new EngineLifecycle();
         $engine = ['id' => 'engine_a', 'status' => 'installed'];
 
-        $updated = $lifecycle->transition($engine, 'running');
+        $updated = $lifecycle->transition($engine, 'active');
 
-        $this->assertSame('running', $updated['status']);
+        $this->assertSame('active', $updated['status']);
         $this->assertArrayHasKey('lifecycle_updated_at', $updated);
+    }
+
+    public function test_engine_lifecycle_supports_required_states(): void
+    {
+        $lifecycle = new EngineLifecycle();
+        $engine = ['id' => 'engine_a', 'status' => 'installed'];
+
+        $requiredStates = ['installed', 'registered', 'validated', 'initialized', 'ready', 'active', 'maintenance', 'upgrading', 'disabled', 'failed', 'removed'];
+
+        foreach ($requiredStates as $state) {
+            $updated = $lifecycle->transition($engine, $state);
+            $this->assertSame($state, $updated['status']);
+        }
     }
 
     public function test_engine_validator_reports_missing_required_fields(): void

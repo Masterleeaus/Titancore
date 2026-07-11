@@ -69,11 +69,28 @@ class AssetManifestValidator
 
     /**
      * Required subfields on each item within an engine 'engines' array.
-     *
-     * lifecycle is expected to be a non-empty status descriptor
-     * (for example: managed, registered, installed, loaded, running).
      */
-    private const ENGINE_ITEM_REQUIRED = ['id', 'name', 'description', 'class', 'version', 'lifecycle'];
+    private const ENGINE_ITEM_REQUIRED = [
+        'id',
+        'name',
+        'version',
+        'sdk_version',
+        'type',
+        'description',
+        'author',
+        'class',
+        'lifecycle',
+        'dependencies',
+        'permissions',
+        'capabilities',
+        'providers',
+        'widgets',
+        'resources',
+        'settings',
+        'health_checks',
+        'upgrade_handlers',
+        'install_handlers',
+    ];
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
