@@ -2,9 +2,10 @@
 
 namespace TitanSDK\Services;
 
+use TitanSDK\Contracts\Engine\EngineManagerContract;
 use Modules\TitanCore\Services\Engine\EngineManager;
 
-class TitanEngineManager
+class TitanEngineManager implements EngineManagerContract
 {
     public function __construct(
         private readonly EngineManager $manager,

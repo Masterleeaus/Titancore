@@ -12,10 +12,18 @@ class EngineInstaller
         $installed['status'] = 'installed';
         $installed['installed_at'] = gmdate('c');
 
-        if (function_exists('event') && isset($installed['id'], $installed['version']) && is_string($installed['id']) && is_string($installed['version'])) {
+        if ($this->shouldDispatchInstalledEvent($installed)) {
             event(new EngineInstalled($installed['id'], $installed['version'], $installed['installed_at']));
         }
 
         return $installed;
+    }
+
+    private function shouldDispatchInstalledEvent(array $engine): bool
+    {
+        return function_exists('event')
+            && isset($engine['id'], $engine['version'])
+            && is_string($engine['id'])
+            && is_string($engine['version']);
     }
 }

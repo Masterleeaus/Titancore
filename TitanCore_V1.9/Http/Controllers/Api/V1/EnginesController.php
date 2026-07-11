@@ -9,13 +9,15 @@ use Modules\TitanCore\Services\Engine\EngineManager;
 
 class EnginesController extends Controller
 {
+    private const MODULE_ROOT_DEPTH = 5;
+
     public function __construct(
         private readonly EngineManager $engines,
     ) {}
 
     private function moduleDir(): string
     {
-        return dirname(__DIR__, 5);
+        return dirname(__DIR__, self::MODULE_ROOT_DEPTH);
     }
 
     public function index(): JsonResponse

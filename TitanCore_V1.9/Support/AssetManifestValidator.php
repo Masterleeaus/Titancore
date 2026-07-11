@@ -67,7 +67,12 @@ class AssetManifestValidator
     /** Required subfields on each item within a prompt 'prompts' array */
     private const PROMPT_ITEM_REQUIRED = ['id', 'name', 'description', 'category', 'variables'];
 
-    /** Required subfields on each item within an engine 'engines' array */
+    /**
+     * Required subfields on each item within an engine 'engines' array.
+     *
+     * lifecycle is expected to be a non-empty status descriptor
+     * (for example: managed, registered, installed, loaded, running).
+     */
     private const ENGINE_ITEM_REQUIRED = ['id', 'name', 'description', 'class', 'version', 'lifecycle'];
 
     // ── Public API ─────────────────────────────────────────────────────────────
