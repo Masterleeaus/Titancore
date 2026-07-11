@@ -28,6 +28,8 @@ class ValidateModuleCommand extends Command
 
     /** Maximum number of PHP files to sample for namespace validation. */
     private const MAX_NS_SAMPLE = 100;
+    /** Maximum number of module suggestions shown for missing module errors. */
+    private const MAX_DISCOVERED_MODULES = 12;
 
     public function handle(): int
     {
@@ -266,6 +268,6 @@ class ValidateModuleCommand extends Command
 
         sort($modules);
 
-        return array_slice($modules, 0, 12);
+        return array_slice($modules, 0, self::MAX_DISCOVERED_MODULES);
     }
 }
