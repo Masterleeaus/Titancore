@@ -101,7 +101,7 @@ class TitanCoreModelGatewayTest extends TestCase
 
     public function test_validate_titan_config_uses_the_underscored_runtime_key(): void
     {
-        $previousConfig = $GLOBALS['__titan_config'] ?? [];
+        $originalConfig = $GLOBALS['__titan_config'] ?? [];
 
         $GLOBALS['__titan_config'] = [
             'titan_model_runtime' => [
@@ -125,7 +125,7 @@ class TitanCoreModelGatewayTest extends TestCase
 
             $this->assertTrue(true);
         } finally {
-            $GLOBALS['__titan_config'] = $previousConfig;
+            $GLOBALS['__titan_config'] = $originalConfig;
         }
     }
 
@@ -162,7 +162,7 @@ class TitanCoreModelGatewayTest extends TestCase
             public function has(...$args): bool { return false; }
             public function bound(...$args): bool { return false; }
             public function resolved(...$args): bool { return false; }
-            public function makeWith(...$args): mixed { return $this->make(...$args); }
+            public function makeWith(...$args): mixed { return $this->make($args[0], $args[1] ?? []); }
             public function extend(...$args): void {}
             public function __call(string $name, array $arguments): mixed
             {
