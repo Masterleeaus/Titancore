@@ -59,7 +59,7 @@ class PlatformAdministrationFramework
 
     public function settingsGroupsFor(mixed $user): array
     {
-        $groups = (array) (($this->framework['settings_framework']['groups'] ?? []));
+        $groups = (array) ($this->framework['settings_framework']['groups'] ?? []);
 
         return array_values(array_filter($groups, function (array $group) use ($user): bool {
             return $this->can($user, $group['permission'] ?? null);
@@ -68,7 +68,7 @@ class PlatformAdministrationFramework
 
     public function dashboardWidgets(string $dashboard): array
     {
-        return (array) (($this->framework['dashboard_framework']['dashboards'][$dashboard]['widgets'] ?? []));
+        return (array) ($this->framework['dashboard_framework']['dashboards'][$dashboard]['widgets'] ?? []);
     }
 
     private function can(mixed $user, ?string $permission): bool
