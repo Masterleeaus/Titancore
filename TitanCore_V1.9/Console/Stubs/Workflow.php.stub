@@ -13,8 +13,16 @@ class {{ Name }}Workflow
     /**
      * Execute the workflow.
      *
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
+     * @param  array{
+     *     workflow_id?: string,
+     *     initiator_id?: int|string|null,
+     *     context?: array<string, mixed>
+     * }  $payload
+     * @return array{
+     *     workflow: string,
+     *     status: 'completed'|'failed',
+     *     steps?: list<array<string, mixed>>
+     * }
      */
     public function execute(array $payload): array
     {

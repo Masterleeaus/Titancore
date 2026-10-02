@@ -58,6 +58,19 @@ class MdkGeneratorCommandTest extends TestCase
     }
 
     /** @test */
+    public function make_module_readme_contains_example_commands(): void
+    {
+        $this->artisan('titan:make-module', ['name' => 'ReadmeModule'])->run();
+
+        $content = file_get_contents($this->tmpModulesDir.'/ReadmeModule/README.md');
+
+        $this->assertStringContainsString('titan:make-provider ExampleProvider', $content);
+        $this->assertStringContainsString('titan:make-tool ExampleTool', $content);
+        $this->assertStringContainsString('titan:make-workflow ExampleWorkflow', $content);
+        $this->assertStringContainsString('titan:make-panel ExampleStudio', $content);
+    }
+
+    /** @test */
     public function make_module_substitutes_name_in_module_json(): void
     {
         $this->artisan('titan:make-module', ['name' => 'MyShop'])->run();
@@ -153,6 +166,29 @@ class MdkGeneratorCommandTest extends TestCase
 
         $this->assertStringContainsString('class InvoiceTool', $content);
         $this->assertStringContainsString('namespace Modules\\ToolMod\\Tools', $content);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // titan:make-provider
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** @test */
+    public function make_provider_creates_class_and_manifest_with_autocomplete_docs(): void
+    {
+        mkdir($this->tmpModulesDir.'/ProvMod', 0755, true);
+
+        $exit = $this->artisan('titan:make-provider', [
+            'name'     => 'Demo',
+            '--module' => 'ProvMod',
+        ])->run();
+
+        $this->assertSame(0, $exit);
+        $this->assertFileExists($this->tmpModulesDir.'/ProvMod/Providers/DemoProvider.php');
+        $this->assertFileExists($this->tmpModulesDir.'/ProvMod/manifests/provider.json');
+
+        $content = file_get_contents($this->tmpModulesDir.'/ProvMod/Providers/DemoProvider.php');
+        $this->assertStringContainsString("@param  array{", $content);
+        $this->assertStringContainsString("@return array{", $content);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

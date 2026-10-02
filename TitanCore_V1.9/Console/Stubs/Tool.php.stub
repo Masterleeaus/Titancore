@@ -14,8 +14,16 @@ class {{ Name }}Tool
     /**
      * Execute the tool.
      *
-     * @param  array<string, mixed>  $input  Validated input parameters.
-     * @return array<string, mixed>
+     * @param  array{
+     *     query?: string,
+     *     tenant_id?: int|string|null,
+     *     options?: array<string, mixed>
+     * }  $input  Validated input parameters.
+     * @return array{
+     *     status: 'ok'|'error',
+     *     result?: mixed,
+     *     message?: string
+     * }
      */
     public function execute(array $input): array
     {
